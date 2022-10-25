@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="11"/>
+    <BuildModes Count="1" Active="Debug">
+      <Item1 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="CubeTest"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\Arrays\source\array;..\Arrays\source\highrestimer;..\Arrays\source\ml;..\Arrays\source\steroids"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="4"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <DebugInfoType Value="dsDwarf2Set"/>
+              <StripSymbols Value="True"/>
+              <UseExternalDbgSyms Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <Verbosity>
+              <ShoLineNum Value="True"/>
+              <ShowAll Value="True"/>
+              <ShowDebugInfo Value="True"/>
+              <ShowUsedFiles Value="True"/>
+              <ShowTriedFiles Value="True"/>
+              <ShowCompProc Value="True"/>
+              <ShowCond Value="True"/>
+            </Verbosity>
+            <CustomOptions Value="-dProfiling"/>
+          </Other>
+        </CompilerOptions>
+      </Item1>
+    </BuildModes>
+    <Units Count="53">
+      <Unit0>
+        <Filename Value="CubeTest.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="312"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="umain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="uMain"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="73"/>
+        <CursorPos X="34" Y="97"/>
+        <UsageCount Value="312"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="dcube.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="264"/>
+        <CursorPos X="28" Y="285"/>
+        <UsageCount Value="312"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\Arrays\source\array\arrayhelper.pas"/>
+        <UnitName Value="ArrayHelper"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1047"/>
+        <CursorPos Y="1075"/>
+        <UsageCount Value="156"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\Arrays\source\array\arrayhelpercommon.pas"/>
+        <UnitName Value="ArrayHelperCommon"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="101"/>
+        <CursorPos X="18" Y="316"/>
+        <UsageCount Value="156"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\Arrays\source\array\ahdefines.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="41" Y="35"/>
+        <UsageCount Value="140"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1633"/>
+        <CursorPos X="18" Y="1638"/>
+        <UsageCount Value="95"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\Arrays\source\array\arrayfloath.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="197"/>
+        <CursorPos X="71" Y="177"/>
+        <UsageCount Value="139"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\rttih.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="22"/>
+        <UsageCount Value="39"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\varianth.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="32"/>
+        <CursorPos X="4" Y="57"/>
+        <UsageCount Value="119"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\packages\rtl-objpas\src\inc\variants.pp"/>
+        <UnitName Value="Variants"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2976"/>
+        <CursorPos X="3" Y="2979"/>
+        <UsageCount Value="142"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\sysutils\sysstr.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1369"/>
+        <CursorPos X="3" Y="1385"/>
+        <UsageCount Value="48"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\Arrays\source\array\arrayfloatimp.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1723"/>
+        <CursorPos X="65" Y="1752"/>
+        <UsageCount Value="132"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\math.pp"/>
+        <UnitName Value="Math"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2040"/>
+        <CursorPos X="3" Y="2130"/>
+        <UsageCount Value="49"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="293"/>
+        <CursorPos X="8" Y="316"/>
+        <UsageCount Value="116"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\rtti.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="434"/>
+        <UsageCount Value="117"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\rttidecl.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4"/>
+        <CursorPos X="3" Y="38"/>
+        <UsageCount Value="109"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\text.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="235"/>
+        <CursorPos X="3" Y="237"/>
+        <UsageCount Value="114"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\mathh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="117"/>
+        <CursorPos X="14" Y="117"/>
+        <UsageCount Value="114"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\Arrays\source\array\arraynumh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="113"/>
+        <CursorPos X="13" Y="136"/>
+        <UsageCount Value="210"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\Arrays\source\array\arraynumimp.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="780"/>
+        <CursorPos X="40" Y="811"/>
+        <UsageCount Value="210"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\types.pp"/>
+        <UnitName Value="Types"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="295"/>
+        <CursorPos X="3" Y="498"/>
+        <UsageCount Value="97"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\sysutils\syshelph.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="32" Y="4"/>
+        <UsageCount Value="94"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\Arrays\source\highrestimer\hirestimer.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="28"/>
+        <CursorPos X="7" Y="57"/>
+        <UsageCount Value="102"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\unix\sysutils.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="497"/>
+        <CursorPos Y="522"/>
+        <UsageCount Value="100"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\packages\fcl-db\src\base\db.pas"/>
+        <UnitName Value="DB"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2676"/>
+        <CursorPos X="10" Y="2721"/>
+        <UsageCount Value="6"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\packages\fcl-db\src\base\dataset.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="139"/>
+        <UsageCount Value="18"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\stdctrls.pp"/>
+        <UnitName Value="StdCtrls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="267"/>
+        <CursorPos X="14" Y="430"/>
+        <UsageCount Value="129"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\controls.pp"/>
+        <UnitName Value="Controls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2213"/>
+        <CursorPos X="20" Y="2237"/>
+        <UsageCount Value="131"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\graphiccontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="84"/>
+        <CursorPos X="24" Y="123"/>
+        <UsageCount Value="58"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1289"/>
+        <CursorPos X="52" Y="1309"/>
+        <UsageCount Value="93"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\canvas.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="17"/>
+        <CursorPos X="3" Y="45"/>
+        <UsageCount Value="112"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\control.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4341"/>
+        <CursorPos X="3" Y="4351"/>
+        <UsageCount Value="33"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\winapi.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="238"/>
+        <CursorPos X="23" Y="240"/>
+        <UsageCount Value="25"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\wincontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="8441"/>
+        <CursorPos X="3" Y="8446"/>
+        <UsageCount Value="33"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\interfacebase.pp"/>
+        <UnitName Value="InterfaceBase"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="187"/>
+        <CursorPos X="3" Y="211"/>
+        <UsageCount Value="100"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\intfbasewinapi.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="350"/>
+        <CursorPos X="3" Y="352"/>
+        <UsageCount Value="5"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\intfbaselcl.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="644"/>
+        <CursorPos X="3" Y="688"/>
+        <UsageCount Value="109"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\lclclasses.pp"/>
+        <UnitName Value="LCLClasses"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="31"/>
+        <CursorPos X="14" Y="57"/>
+        <UsageCount Value="25"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\widgetset\wscontrols.pp"/>
+        <UnitName Value="WSControls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="347"/>
+        <CursorPos X="3" Y="350"/>
+        <UsageCount Value="25"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\graphmath.pp"/>
+        <UnitName Value="GraphMath"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="876"/>
+        <CursorPos X="3" Y="904"/>
+        <UsageCount Value="25"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\typshrdh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="116"/>
+        <CursorPos X="17" Y="145"/>
+        <UsageCount Value="25"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\customcontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="74"/>
+        <CursorPos X="3" Y="76"/>
+        <UsageCount Value="25"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\lcltype.pp"/>
+        <UnitName Value="LCLType"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="140"/>
+      </Unit43>
+      <Unit44>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\packages\fcl-image\src\fpcanvas.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="585"/>
+        <CursorPos X="3" Y="589"/>
+        <UsageCount Value="125"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\imglist.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1222"/>
+        <CursorPos X="8" Y="1225"/>
+        <UsageCount Value="134"/>
+      </Unit45>
+      <Unit46>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\dragobject.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="112"/>
+        <CursorPos X="3" Y="114"/>
+        <UsageCount Value="18"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\packages\fcl-image\src\fpcolors.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="83" Y="21"/>
+        <UsageCount Value="124"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\typshrd.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="341"/>
+        <CursorPos X="3" Y="343"/>
+        <UsageCount Value="112"/>
+      </Unit48>
+      <Unit49>
+        <Filename Value="..\..\..\..\Applications\Lazarus\lcl\include\rasterimage.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="12"/>
+        <CursorPos X="12" Y="59"/>
+        <UsageCount Value="109"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\objpas\classes\parser.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="154"/>
+        <CursorPos X="3" Y="201"/>
+        <UsageCount Value="6"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="..\..\..\..\usr\local\share\fpcsrc\rtl\inc\systemh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="738"/>
+        <CursorPos X="3" Y="762"/>
+        <UsageCount Value="6"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="..\..\Arrays\source\array\arrayhelper.pas"/>
+        <UnitName Value="ArrayHelper"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit52>
+    </Units>
+    <JumpHistory Count="2" HistoryIndex="1">
+      <Position1>
+        <Filename Value="umain.pas"/>
+        <Caret Line="9" Column="46"/>
+      </Position1>
+      <Position2>
+        <Filename Value="umain.pas"/>
+        <Caret Line="97" Column="61" TopLine="73"/>
+      </Position2>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="0" ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints Count="1">
+      <Item1>
+        <Kind Value="bpkData"/>
+        <WatchData Value="TDimensionButton(Source).Top"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
+      </Item1>
+    </BreakPoints>
+    <Watches Count="3">
+      <Item1>
+        <Expression Value="nums"/>
+      </Item1>
+      <Item2>
+        <Expression Value="start"/>
+      </Item2>
+      <Item3>
+        <Expression Value="oprs"/>
+      </Item3>
+    </Watches>
+  </Debugging>
+</CONFIG>
