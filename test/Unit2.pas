@@ -1,46 +1,45 @@
-unit uMain;
-
-{$mode delphi}{$H+}
+unit Unit2;
 
 interface
 
 uses
-  Classes, StrUtils, SysUtils, Forms, Controls, Graphics, Dialogs, Grids,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube,
-  hirestimer ;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, StrUtils, Math, System.Variants, System.Classes, Vcl.Graphics
+  ,Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, DateUtils
+  ,Vcl.ComCtrls, Vcl.Grids
+  , DCube
+  {$ifdef Profiling}, hirestimer{$endif}
+  ;
 
 type
-
-  { TForm1 }
-
   TForm1 = class(TForm)
+    PageControl1: TPageControl;
+    Grid: TTabSheet;
+    Log: TTabSheet;
+    Memo1: TMemo;
+    Edit1: TEdit;
     BitBtn1: TBitBtn;
     Button1: TButton;
-    Edit1: TEdit;
     grd: TStringGrid;
-    Memo1: TMemo;
-    PageControl1: TPageControl;
-    TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
-    Pivot:TPivotControl;
-    procedure Button1Click(Sender: TObject);
-    procedure UpdateCubeDimention(Sender:TObject);
-    procedure BitBtn1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure UpdateCubeDimention(Sender: TObject);
+    procedure BitBtn1Click(Sender: TObject);
   private
-
+      DataObj:TObjData;
+    procedure DrawCube(const Cube: TObjData; Grid: TStringGrid);
+    function Logs(const str:string):integer;                          //    overload;
+//    function Logs(const fmt: string; vals: array of const): integer;      overload;      { Private declarations }
   public
-    DataObj:TObjData;
-    procedure DrawCube(const Cube:TObjData;Grid:TStringGrid);
-    function Log(const str:string):integer;                              overload;
-    function Log(const fmt: string; vals: array of const): integer;      overload;
+    { Public declarations }
   end;
 
 var
   Form1: TForm1;
+  Pivot: TPivotControl   ;
 
 implementation
-{$R *.lfm}
+
+
+{$R *.dfm}
 
 function GenerateRecord():TDataRecord;
 var i:integer;
@@ -56,11 +55,23 @@ begin
 
 end;
 
-{ TForm1 }
+
+
+procedure TForm1.BitBtn1Click(Sender: TObject);
+//var ar:TTableData;a:TDataRecord; bb:array of boolean;
+begin
+//  bb:=[false,false];
+//  ar:=[['a','a'],['a','b'],['b','c']];
+//  a:=[100,300];
+//  Memo1.Lines.Add(format('%d',[sizeof(ar)]));
+////  Memo1.Lines.Add('%d',[arrayLookup<TDataRecord>(ar,a,bb,true)])
+
+end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
+
   SetCurrentDir(ExtractFilePath(ParamStr(0)));
   Pivot:=TPivotControl.Create(Self);
   Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
@@ -68,7 +79,7 @@ begin
   Pivot.SendToBack;
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
-  DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
+  //DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
   setLength(DataObj.Data,1000000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',htString),
@@ -88,28 +99,40 @@ begin
 
 end;
 
-procedure TForm1.DrawCube(const Cube: TObjData; Grid: TStringGrid);
-var i,j,k, MeasureCount:integer; ss:string;
+
+function TForm1.Logs(const str: string): integer;
 begin
-  {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
-  log('HEADERS LIST:');
+  result:=Memo1.Lines.Add(str);
+end;
+
+procedure TForm1.UpdateCubeDimention(Sender: TObject);
+begin
+  DataObj.Dimensions:=Pivot.Dimensions;
+  DrawCube(Cube(Pivot.DataObject^),grd)
+end;
+
+procedure TForm1.DrawCube(const Cube: TObjData; Grid: TStringGrid);
+var i,j,k, MeasureCount:integer;ss:string;
+begin
+   {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
+  logs('HEADERS LIST:');
   for i:=0 to high(Cube.Headers.rows) do
-    Log(format('    Headers.Rows[%d]: %s',[i,StringReplace(Cube.Headers.rows[i].toString,#$FF,'',[rfReplaceAll])]));
+    Logs(format('    Headers.Rows[%d]: %s',[i,StringReplace(Cube.Headers.rows[i].toString,#$FF,'',[rfReplaceAll])]));
   for i:=0 to high(Cube.Headers.Columns) do
-    Log(format('    Headers.Columns[%d]: %s',[i,StringReplace(Cube.Headers.Columns[i].toString,#$FF,'',[rfReplaceAll])]));
-  log('');
-  log('LIST:');
-  Log('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
-  Log('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
-  log('Result:');
+    Logs(format('    Headers.Columns[%d]: %s',[i,StringReplace(Cube.Headers.Columns[i].toString,#$FF,'',[rfReplaceAll])]));
+  logs('');
+  logs('LIST:');
+//  Logs('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
+//  Logs('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
+  logs('Result:');
 
-  //for ss in Cube.results.Keys do
-  //  Log('  %s => %s',[ss,Cube.results[ss].DataRecord.toString()]);
-
-
+  for ss in Cube.results.Keys do
+    Logs(format('  %s => %s',[ss,Cube.results[ss].DataRecord.toString()]));
 
 
-  Grid.Clear;
+
+
+//  Grid.Clear;
   MeasureCount:=length(Cube.Dimensions.Measures);
   Grid.ColCount:=length(Cube.Dimensions.Rows)+Length(Cube.Headers.Columns[High(Cube.Headers.Columns)])+ord(not (assigned(Cube.Dimensions.Rows) or assigned(Cube.Dimensions.Cols)));
 
@@ -137,46 +160,10 @@ begin
   for i:=0 to High(Cube.Data) do
     for j:=0 to High(Cube.Data[i]) do
       Grid.Cells[j+length(Cube.Headers.rows),i+length(Cube.Headers.columns)]:=Cube.Data[i][j];
-  Grid.AutoSizeColumns;
+//  Grid.AutoSizeColumns;
 end;
 
-function TForm1.Log(const str: string): integer;
-begin
-  result:=Memo1.Lines.Add(str);
-end;
 
-function TForm1.Log(const fmt: string; vals: array of const): integer;
-begin
-  result:=Memo1.Lines.add(fmt, vals)
-end;
 
-procedure TForm1.UpdateCubeDimention(Sender: TObject);
-begin
-  DataObj.Dimensions:=Pivot.Dimensions;
-  //defaultTotalsOption.subCols:=false;
-  //defaultTotalsOption.subRows:=false;
-  //defaultTotalsOption.grandCols:=false;
-  //defaultTotalsOption.grandRows:=false;
-
-  DrawCube(Cube(DataObj),grd);
-  //
-end;
-
-procedure TForm1.Button1Click(Sender: TObject);
-begin
-  Log( Eval(Edit1.Text))
-end;
-
-procedure TForm1.BitBtn1Click(Sender: TObject);
-var ar:TTableData;a:TDataRecord; bb:array of boolean;
-begin
-  bb:=[false,false];
-  ar:=[['a','a'],['a','b'],['b','c']];
-  a:=[100,300];
-  Memo1.Lines.Add('%d',[sizeof(ar)]);
-//  Memo1.Lines.Add('%d',[arrayLookup<TDataRecord>(ar,a,bb,true)])
-
-end;
 
 end.
-

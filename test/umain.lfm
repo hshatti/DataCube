@@ -6,9 +6,8 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 834
   ClientWidth = 1180
-  DesignTimePPI = 144
   OnCreate = FormCreate
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.0.12.0'
   Scaled = False
   object PageControl1: TPageControl
     Left = 342
