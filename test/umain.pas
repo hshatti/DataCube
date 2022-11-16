@@ -24,14 +24,14 @@ type
     TabSheet2: TTabSheet;
     Pivot:TPivotControl;
     procedure Button1Click(Sender: TObject);
-    procedure UbdateCubeDimention(Sender:TObject);
+    procedure UpdateCubeDimention(Sender:TObject);
     procedure BitBtn1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
 
   public
     DataObj:TObjData;
-    procedure DrawCube(Cube:TObjData;Grid:TStringGrid);
+    procedure DrawCube(const Cube:TObjData;Grid:TStringGrid);
     function Log(const str:string):integer;                              overload;
     function Log(const fmt: string; vals: array of const): integer;      overload;
   end;
@@ -61,14 +61,15 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
+  SetCurrentDir(ExtractFilePath(ParamStr(0)));
   Pivot:=TPivotControl.Create(Self);
-  Pivot.OnUpdateCubeDimenstion:=UbdateCubeDimention;
+  Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
   Pivot.Parent:=Self;
   Pivot.SendToBack;
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,100000);
+  setLength(DataObj.Data,1000000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',htString),
     THeader.Create('Service',htString),
@@ -77,14 +78,18 @@ begin
     THeader.Create('Price',htDouble),
     THeader.Create('Date',htDateTime)
   ]];
+  {$ifdef Profiling}Profiler.Start;{$endif}
   for i:=0 to high(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord;
-  Pivot.DataObject:=DataObj;
+  {$ifdef Profiling}Profiler.Log(format('Data Generated! with [%d] row',[Length(DataObj.Data)]));{$endif}
+  //DataObj.SaveToFile(GetCurrentDir+'gentable.csv');
+  Pivot.DataObject:=@DataObj;
+ {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr; {$endif}
 
 end;
 
-procedure TForm1.DrawCube(Cube: TObjData; Grid: TStringGrid);
-var i,j,k, MeasureCount:integer;
+procedure TForm1.DrawCube(const Cube: TObjData; Grid: TStringGrid);
+var i,j,k, MeasureCount:integer; ss:string;
 begin
   {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
   log('HEADERS LIST:');
@@ -96,6 +101,14 @@ begin
   log('LIST:');
   Log('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
   Log('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
+  log('Result:');
+
+  for ss in Cube.results.Keys do
+    Log('  %s => %s',[ss,Cube.results[ss].DataRecord.toString()]);
+
+
+
+
   Grid.Clear;
   MeasureCount:=length(Cube.Dimensions.Measures);
   Grid.ColCount:=length(Cube.Dimensions.Rows)+Length(Cube.Headers.Columns[High(Cube.Headers.Columns)])+ord(not (assigned(Cube.Dimensions.Rows) or assigned(Cube.Dimensions.Cols)));
@@ -137,9 +150,14 @@ begin
   result:=Memo1.Lines.add(fmt, vals)
 end;
 
-procedure TForm1.UbdateCubeDimention(Sender: TObject);
+procedure TForm1.UpdateCubeDimention(Sender: TObject);
 begin
   DataObj.Dimensions:=Pivot.Dimensions;
+  //defaultTotalsOption.subCols:=false;
+  //defaultTotalsOption.subRows:=false;
+  //defaultTotalsOption.grandCols:=false;
+  //defaultTotalsOption.grandRows:=false;
+
   DrawCube(Cube(DataObj),grd);
   //
 end;
