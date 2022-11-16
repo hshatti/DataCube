@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, StrUtils, SysUtils, Forms, Controls, Graphics, Dialogs, Grids,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube,
-  hirestimer ;
+  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube
+  {$ifdef Profiling}, hirestimer{$endif} ;
 
 type
 
