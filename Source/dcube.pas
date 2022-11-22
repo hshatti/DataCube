@@ -8,15 +8,14 @@
 
 {$endif}
 
-  {$define use_collections}
 interface
 
 uses
    {$ifdef fpc}LCLType, {$endif}
    Types, Classes, SysUtils
-   {$ifdef use_collections}, Generics.Collections, Generics.Defaults{$endif}
+   , Generics.Collections, Generics.Defaults
    ,Variants
-   {$ifdef MSWINDOWS}, windows{$endif}
+   //{$ifdef MSWINDOWS}, windows{$endif}
    {$ifdef Profiling}, hirestimer{$endif}
    , Controls, StdCtrls, Graphics
   //,fpjson,extjsjson
@@ -32,6 +31,8 @@ const   varsOrdinal=[varShortInt,varSmallInt,varInteger,varInt64,varByte,varWord
 type
 
   TFilterCallback<T,PT>=function (const a:T;const i:Integer; Arr:PT):boolean of object;
+
+  TCompareFunc<T>=function (const a,b:T):integer;
 
   THeaderType=( htUnknowen, htString, htBoolean, htByte, htWord, htInteger, htInt64, htSingle, htDouble, htCurrency, htDateTime, htSingleComplex, htDoubleComplex);
 
@@ -61,13 +62,15 @@ type
 
   TStringArrayHelper = record helper for TStringDynArray
     function IndexOf(const str:string):integer;
-    function Lookup(const str:string;const CaseSensitive:boolean=true):Int64;
+    function Lookup(const str:string;const CaseSensitive:boolean=true):{$ifdef fpc}int64{$else} integer{$endif};
   end;
   PStringArray=^TStringArray;
   TStringArray=TStringDynArray;
   TVariantArray=TArray<Variant>;
   TDateTimeArray=TArray<TDateTime>;
   TReduceCallback<T> = function(const a,b:T;const i:integer;const arr:array of T):T;
+
+  { TVariantArrayHelper }
 
   TVariantArrayHelper=record helper for TVariantArray
   type
@@ -77,6 +80,7 @@ type
     TType=Variant;
     TSelf=TVariantArray;
     TFilterFunc=TFilterCallback<TType,TSelf>;
+    TVariantCompareFunc=TCompareFunc<TType>;
   private
   public
     function Concat(const Arr:TSelf):TSelf;
@@ -85,9 +89,11 @@ type
     function Filter(const func:TFilterFunc):TSelf;
     function Sort():TSelf;
     function Unique():TSelf;
+    function Push(const AValue: Variant): Integer;
     function Reduce(const func:TReduceCallback<Variant>):Variant;//  _SIMPLEREDUCE_;
     class function Fill(ACount:integer;const AValue:Variant):TSelf;static;
     class function uniqueFilt(const a:TType;const i:integer;arr:TSelf):boolean;static;
+    class function Compare(const a,b:Variant):integer;static;
   end;
 
   TVariantArrayArray=TArray<TVariantArray>;
@@ -138,7 +144,7 @@ type
     Data:TArray<T>;
     Indicator:integer;
     property Current:T read GetCurrent;
-    function Add(const AValue:T):integer;
+    function Push(const AValue:T):integer;
     function reduce(const func: TReduceCallback<T>): T;       overload;
     class function reduce(const self:TArray<T>;const func:TReduceCallback<T>):T;  overload;static;
     procedure Shrink;
@@ -184,32 +190,44 @@ type
 
   { TResults }
   TResults=record
-    TableData:TTableData2<Variant>;
+    TableData:{$ifdef fpc}TTableData2<Variant>{$else}TTableData{$endif};
     DataRecord:TDataRecord;
     constructor Create(const MeasureCount,RowCount:integer);
   end;
 
-  {$define KeyValueList}
-  {$ifdef KeyValueList}
-  TResultData={$ifdef use_collections}TDictionary<string,TResults>
-              {$else} TSortedKeyValueList<string,TResults>
-              {$endif};
-  {$else}
-  { TResultData }
 
-  TResultData=record
-  private
-    function GetValues(const key: string): TResults;
-    procedure SetValues(const key: string; const AValue: TResults);
-  public
-    Keys:TStringDynArray;
-    ValueList:array of TResults;
-    function KeyExists(key: string): boolean;
-    property Values[key:string]:TResults read GetValues write SetValues ;default;
-    function Count:integer;
-    procedure Remove(const index:integer);
-  end;
-  {$endif}
+//  {$ifndef fpc}
+//  { TKeyValueList<TK,TR> }
+//
+//  TSortedKeyValueList<TK,TV>=record
+//  type
+//    TKeyArray=TArray<TK>;
+//    TValueArray=TArray<TV>;
+//  public
+//    Keys:TKeyArray;
+//    Values:TValueArray;
+//  private
+//    function GetValues( key: TK): TV;
+//    procedure SetValues( key: TK; AValue: TV);
+//  public
+//    function ContainsKey(const key: TK): boolean;
+//    function IndexOfKey(const Key:TK):integer;
+//    function AddOrUpdate(const Key:TK;const AValue:TV):integer;
+//    procedure Add(const Key:TK;const AValue:TV);
+//    function TryGetValue(const Key:TK;out Value:TV):boolean;
+//    property Items[key:TK]:TV read GetValues write SetValues ;default;
+//    function Count:integer;
+//    procedure Remove(const index:integer);
+//  end;
+//  {$endif}
+
+  TResultData=
+//  {$ifdef fpc}
+  TDictionary<string,TResults>
+//  {$else}
+//  TSortedKeyValueList<string,TResults>
+//  {$endif}
+  ;
 
   { TObjData }
   PObjData=^TObjData;
@@ -321,13 +339,20 @@ type
   function arrayComp(const a,b:TVariantArray;const rev:boolean;const p:boolean):TValueRelationship;             overload;
   function arrayComp(const a,b:TVariantArray;const rev:array of boolean;const p:boolean):TValueRelationship;    overload;
   type
+
+  { TCubeArr }
+
   TCubeArr=class
     class function min<T>(const a,b:T):T; static;
     class function max<T>(const a,b:T):T; static;
     class function arrayLookup(const arr:array of TVariantArray;const e:TVariantArray;const reverse:array of boolean;const rp:boolean):integer;   overload;
     class function arrayLookup(const arr:array of TVariantArray;const e:TVariantArray;const reverse:boolean=false;const rp:boolean=false):integer;   overload;
     class function IfThen<T>(const cond:boolean;const whenTrue,whenFalse:T):T; static;
+    class procedure QuickSort<T>(var Arr: array of T; L, R: Longint; const Descending: boolean; const Compare: TComparefunc<T>);
+    class function BinSearch<T>(const Arr:array of T;const Val:T; R:integer):integer;
+    class function cmp<T>(const a, b: T): integer;
   end;
+
   function Eval(str:string):double;
   //function comp<T>(const a,b:T;const rev:boolean):integer;            overload;
   //function aComp<T>(const a,b:T;const rev:boolean):integer;           overload;
@@ -352,6 +377,7 @@ const splitter=#9;
 
 
 const oprChars=['*','/','+','-'];
+
 
 function EvalStr( str:string):double;
 var i,start:integer; len:integer;
@@ -461,6 +487,7 @@ var i:integer;vInt:integer;vDouble:double;vBool:boolean;vDateTime:TDateTime;
 begin
   setLength(result,length(str));
   for i:=0 to High(str) do
+    if str[i]='' then continue else
     if TryStrToInt(str[i],vInt) then result[i]:=vInt else
     if TryStrToFloat(str[i],vDouble) then result[i]:=vDouble else
     if TryStrToBool(str[i],vBool) then result[i]:=vBool else
@@ -471,23 +498,99 @@ end;
 
 { TDimensionButton }
 
-const defaultBtnTextStyle:{$ifdef fpc}TTextStyle=
-   (Alignment : taLeftJustify;
-    Layout    : tlCenter;
-    //SingleLine: boolean;
-    //Clipping  : boolean;
-    //ExpandTabs: boolean;
-    //ShowPrefix: boolean;
-    //Wordbreak : boolean;
-    //Opaque    : boolean;
-    //SystemFont: Boolean;
-    //RightToLeft: Boolean;
-    //EndEllipsis: Boolean
-    ) ;
- {$else}
-  Cardinal=DT_CENTER or DT_VCENTER;
- {$endif}
 
+//{$ifndef fpc}
+//
+// { TSortedKeyValueList }
+//
+//function TSortedKeyValueList<TK,TV>.Count: integer;
+//begin
+//  result:=Length(Keys)
+//end;
+//
+//procedure TSortedKeyValueList<TK,TV>.Remove(const index: integer);
+//begin
+//  if (index>=0) and (index<Count) then begin
+//    Delete(Keys,index,1);
+//    Delete(Values,index,1);
+//  end;
+//end;
+//
+//function TSortedKeyValueList<TK,TV>.GetValues( key: TK): TV;
+//var i:integer;
+//begin
+//  i:= TCubeArr.BinSearch<TK>(Keys ,key,Length(Keys));
+//  if i>=0 then
+//    result:=Values[i]
+//end;
+//
+//procedure TSortedKeyValueList<TK,TV>.SetValues( key: TK;  AValue: TV);
+//var i:integer;
+//begin
+//  i:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys));
+//  if i<0 then
+//    begin
+//      i:=-(i+1);
+//      Insert(key, Keys,i);
+//      Insert(AValue,Values,i)
+//    end
+//  else
+//    //begin
+//      Values[i]:=AValue
+//    //end;
+//end;
+//
+//function TSortedKeyValueList<TK, TV>.TryGetValue(const Key: TK; out Value: TV): boolean;
+//var i:integer;
+//begin
+//  i:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys));
+//  result:= i>-1;
+//  if result then
+//    Value:=Values[i]
+//end;
+//
+//function TSortedKeyValueList<TK,TV>.ContainsKey(const key: TK): boolean;
+//begin
+//  result:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys))>=0;
+//end;
+//
+//function TSortedKeyValueList<TK,TV>.IndexOfKey(const Key: TK): integer;
+//begin
+//  result:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys));
+//end;
+//
+//procedure TSortedKeyValueList<TK, TV>.Add(const Key: TK; const AValue: TV);
+//var i:integer;
+//begin
+//  i:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys));
+//  if i<0 then
+//    begin
+//      i:=-(i+1);
+//      Insert(key, Keys,i);
+//      Insert(AValue,Values,i)
+//    end
+////  else
+////      ValueList[i]:=AValue ;
+//end;
+//
+//function TSortedKeyValueList<TK,TV>.AddOrUpdate(const Key: TK; const AValue: TV): integer;
+//var i:integer;
+//begin
+//  i:=TCubeArr.BinSearch<TK>(Keys,key,Length(Keys));
+//  if i<0 then
+//    begin
+//      i:=-(i+1);
+//      Insert(key, Keys,i);
+//      Insert(AValue,Values,i)
+//    end
+//  else
+//    //begin
+//      Values[i]:=AValue ;
+//  result:=i
+//    //end;
+//end;
+//
+//{$endif}
 { TDataRecord2 }
 
 function TDataRecord2<T>.GetCurrent: T;
@@ -505,11 +608,12 @@ begin
   Data[index]:=AValue
 end;
 
-function TDataRecord2<T>.Add(const AValue: T): integer;
+function TDataRecord2<T>.Push(const AValue: T): integer;
 begin
   inc(Indicator);
   Data[indicator]:=AValue;
   result:=Indicator;
+  //WriteLn(AValue);
 
 end;
 
@@ -548,9 +652,11 @@ function TVariantArray2DHelper.ToString(const Seperator: string; const quote: st
 var i:integer;
 begin
   result:='';
-  for i:=0 to High(Self) do
-    result:=Result+Seperator+sLineBreak+Self[i].ToString(Seperator,Quote, Brackets) ;
-  delete(result,1,Length(Seperator)+1);
+  if length(Self)>0 then begin
+    for i:=0 to High(Self) do
+      result:=Result+Seperator+sLineBreak+Self[i].ToString(Seperator,Quote, Brackets) ;
+    delete(result,1,Length(Seperator)+1);
+  end;
   if Brackets then result:='['+result+']';
 end;
 
@@ -705,11 +811,6 @@ begin
 //   if TCubeArr.min<integer>(Width,Height)>0 then
      FPng.SetSize(Width,Height);
 
-  {$ifdef fpc}
-//  FPng.Canvas.TextStyle:=defaultBtnTextStyle;
-  {$else}
-//  FPng.Canvas.TextFlags:=DT_CENTER or DT_VCENTER;
-  {$endif}
 end;
 
 constructor TDimensionButton.Create(AOwner: TComponent);
@@ -927,8 +1028,10 @@ constructor TResults.Create(const MeasureCount,RowCount:integer);
 var i:integer;
 begin
   setLength(TableData,MeasureCount);
+  {.$ifdef fpc}
   for i:=0 to high(TableData) do
-    setLength(TableData[i].Data,RowCount);
+    setLength(TableData[i]{$ifdef fpc}.Data,RowCount{$else},0{$endif});
+  {.$endif}
   setLength(DataRecord,MeasureCount);
   //
 end;
@@ -1002,21 +1105,14 @@ end;
 
 class operator TObjData.Initialize({$ifdef fpc}var{$else}out{$endif} dest: TObjData);
 begin
-  {$ifdef use_collections}
-//  if not assigned(dest.results) then
     dest.results:=TResultData.Create();
-  {$else}
-
-  {$endif}
 end;
 
 class operator TObjData.Finalize(var dest: TObjData);
 begin
-  {$ifdef use_collections}
   if assigned(dest.results) then
     FreeAndNil(dest.results)
-  {$else}
-  {$endif}
+
 end;
 
 
@@ -1035,113 +1131,6 @@ begin
   dest.subRows:=true;
 end;
 
-{$ifdef KeyValueList}
-{$else}
-{ TResultData }
-
-function TResultData.Count: integer;
-begin
-  result:=Length(Keys)
-end;
-
-procedure TResultData.Remove(const index: integer);
-begin
-  if (index>=0) and (index<Count) then begin
-    Delete(Keys,index,1);
-    Delete(ValueList,index,1);
-  end;
-end;
-
-function TResultData.GetValues(const key: string): TResults;
-var i:integer;
-begin
-  i:=_BinSearch<string,TStringDynArray>(Keys,key,Length(Keys));
-  if i>=0 then
-    result:=ValueList[i]
-end;
-
-procedure TResultData.SetValues(const key: string;
-  const AValue: TResults);
-var i:integer;
-begin
-  i:=_BinSearch<string,TStringDynArray>(Keys,key,Length(Keys));
-  if i<0 then
-    begin
-      i:=-(i+1);
-      Insert(key, Keys,i);
-      Insert(AValue,ValueList,i)
-    end
-  else
-    //begin
-      ValueList[i]:=AValue
-    //end;
-end;
-
-function TResultData.KeyExists(key: string): boolean;
-begin
-  result:=_BinSearch<string,TStringDynArray>(Keys,key,Length(Keys))>=0;
-end;
-{$endif KeyValueList}
-
-{function floor(const v:Single):Integer;
-begin
-  if v<>trunc(v) if Single>0 then result:=Trunc(v) else
-    ;
-end;}
-
-(*
-function comp<T>(const a,b:T):integer;
-begin
-  result:=1;
-  if a=b then result:=0
-  else if a<b then result:=-1
-end;
-
-function comp<T>(const a,b:T;const rev:boolean):integer;
-begin
-  result:=1;
-  if a=b then result:=0
-  else if a<b then result:=-1 ;
-  if rev then result:=-result
-end;
-
-function aComp<T>(const a,b:T;const rev:boolean):integer;
-begin
-  result:=1;
-  if a=b then result:=0
-  else if a<b then result:=-1  ;
-  if rev then result:=-result
-end;
-
-
-function Lookup<T>(const Ar:array of T;const e:T;const reverse:boolean;const p:boolean):integer;    { TODO : handle p "position of Totals marked as arrayCompFiller" )  }
-var compareRes,L,R,I:integer;rv:integer;
-
-begin
-    rv:=ifthen<integer>(reverse,-1,1);
-    L := 0;R := length(Ar); I:=0;
-    while L<=R do begin
-        I:=L+{Math.floor}((R - L) shr 1{/ 2});
-        compareRes:=(comp<T>(e,Ar[I]))*rv;
-        if compareRes>0 then L:=I+1
-        else begin R:=I-1;if(compareRes=0) then result:=I end;
-    end;
-    result:= -L-1
-end;
-
-function Lookup<T>(const Ar:array of T;const e:T;const reverse:array of boolean;const p:boolean):integer;    { TODO : handle p "position of Totals marked as arrayCompFiller" )  }
-var compareRes,L,R,I:integer;
-begin
-    L := 0;R := length(Ar); I:=0;
-    while L<=R do begin
-        I:=L+{Math.floor}((R - L) shr 1{/ 2});
-        compareRes:=comp<T>(e,Ar[I]{,reverse});
-        if compareRes>0 then L:=I+1
-        else begin R:=I-1;if(compareRes=0) then result:=I end;
-    end;
-    result:= -L-1
-end;
-*)
 function arrayComp(const a,b:Variant;const rev:boolean;const p:boolean):TValueRelationship;                 overload;
 var rv:TValueRelationship; va,vb:TVarType;
 begin
@@ -1153,9 +1142,9 @@ begin
     if string(b)=arrayCompFiller then begin  result:=TCubeArr.ifthen<TValueRelationship>(p,1,-1);exit end;//arrayCompFiller is larger than anything
     rv:=TCubeArr.ifthen<TValueRelationship>(rev=True,1,-1);
 
-    //if (a=b) and (a=null) then begin result:= 0;exit end
-    //else if a=null then begin result:= 1*rv;exit end
-    //else if b=null then begin result:=-1*rv;exit end;
+    if (a=b) and varisEmpty(a) then begin result:= 0;exit end;
+    if varIsEmpty(a) then begin result:= 1*rv;exit end ;
+    if varIsEmpty(b) then begin result:=-1*rv;exit end;
     if  (vb=va) and ((va in varsNumeric) or (va and varString=varString)) then
        //((vb=varBoolean) and (vb=varBoolean)) or
        //((va in varsNumeric) and (vb =va)) or
@@ -1238,10 +1227,39 @@ begin
     result:= -L-1
 end;
 
+class function TCubeArr.BinSearch<T>(const Arr: array of T; const Val: T; R: integer): integer;
+var
+  L, I: Integer;
+  CompareRes: Integer;isFound:boolean;
+begin
+  isFound := false;
+  result:=-1;
+
+  // Use binary search.
+  L := 0;
+  R := R - 1;
+  while (L<=R) do
+  begin
+    I := L + (R - L) shr 1;
+    CompareRes := cmp<T>(Val, Arr[I]);
+    if (CompareRes>0) then
+      L := I+1
+    else begin
+      R := I-1;
+      if (CompareRes=0) then begin
+         isFound := true;
+//         if (Duplicates<>dupAccept) then
+            L := I; // forces end of while loop
+      end;
+    end;
+  end;
+  if isFound then result := L else result:=-L-1;
+end;
+
+
 class function TCubeArr.IfThen<T>(const cond: boolean; const whenTrue, whenFalse: T): T;
 begin
   if cond then result:=whenTrue else result:=whenFalse
-
 end;
 
 class function TCubeArr.max<T>(const a, b: T): T;
@@ -1260,6 +1278,67 @@ begin
   {$else}
   result:=ifthen<T>(TComparer<T>.Default().Compare(a,b)<0,a,b)
   {$endif}
+end;
+
+class procedure TCubeArr.QuickSort<T>(var Arr: array of T; L, R : Longint; const Descending:boolean;const Compare:TComparefunc<T>);
+var I,J ,neg :integer;
+    P, Q :T;
+begin
+ //if not Assigned(Compare) then Compare:=@{$ifdef fpc}specialize{$endif}_Compare<T>;
+ neg:=ifthen<integer>(descending,-1,1);
+ repeat
+   I := L;
+   J := R;
+   P := Arr[ (L + R) div 2 ];
+   repeat
+     while neg*Compare(P, Arr[i]) > 0 do
+       I := I + 1;
+     while neg*Compare(P, Arr[J]) < 0 do
+       J := J - 1;
+     If I <= J then
+     begin
+       Q := Arr[I];
+       Arr[I] := Arr[J];
+       Arr[J] := Q;
+       I := I + 1;
+       J := J - 1;
+     end;
+   until I > J;
+   if J - L < R - I then
+   begin
+     if L < J then
+       QuickSort<T>(Arr, L, J, Descending, Compare);
+     L := I;
+   end
+   else
+   begin
+     if I < R then
+       QuickSort<T>(Arr, I, R, Descending, Compare);
+     R := J;
+   end;
+ until L >= R;
+end;
+
+class function TCubeArr.cmp<T>(const a, b: T): integer;
+begin
+  {$ifdef fpc}
+  result:=1;
+  if a<b then result:=-1
+  else if a=b then result:=0
+  {$else}
+  result:=TComparer<T>.Default.Compare(a,b)
+  {$endif}
+end;
+
+function toString(const self:array of variant):string;
+var i:integer;
+begin
+  for i := 0 to High(self) do
+    result:=result+', '+self[i];
+  if length(result)>0 then
+    delete(result,1,1);
+  result:='['+result+']'
+
 end;
 
 //function Lookup<T>(const Ar:array of T;const e:T;const comp:TCompareFunc<T>;const reverse:boolean=false;const p:boolean=false):integer;  overload;     { TODO : handle p "position of Totals marked as arrayCompFiller" )  }
@@ -1306,19 +1385,18 @@ begin
   result := n
 end;
 
-{$define BY_COL}
-{$ifdef BY_COL}
 function cube(const obj:TObjData;const options:TTotalsOptions):TObjData;
 var
   i, j, k, rowNo, m_span:integer;
   rCube:string;
-  row, col, r, c, id, Rw:TDataRecord;
+  row, col, r, c, Rw:TDataRecord;
+  id:TResults;
   colStack, rowStack:array of TRecordStack;
-  dims, fieldNames :TStringDynArray;
+  fieldNames :TStringDynArray;
   cub:TTableData;
   colsIds, rowsIds, filtIds, measIds:TIntegerDynArray;
   rSort, cSort: array of boolean;
-  rowAgg ,colAgg {,tmpAgg}:THeader;
+//  rowAgg ,colAgg {,tmpAgg}:THeader;
   Aggs: THeaders;
   oprsIds:array of TAggregation;
   fieldTypes:array of THeaderType;
@@ -1445,32 +1523,28 @@ begin
 
         for i:=0 to high(cub) do  begin
             rCube:=cub[i].toString(splitter,'',false);
-            {$ifdef use_collections}
             if not result.results.ContainsKey(rCube) then
               result.results.Add(rCube,TResults.Create(length(measIds),length(obj.data) ) );
-            {$else}
-            if not result.results.KeyExists(rCube) then
-              result.results[rCube]:=TResults.Create(length(measIds));
-            {$endif}
-
             {$ifdef Profiling} Profiler.Log(9 {measures segment update});{$endif}
             for j:=0 to High(measIds) do
               //insert(obj.Data[rowNo][measIds[j]],result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
-              result.results[rCube].TableData[j].Add(obj.Data[rowNo][measIds[j]]); // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
-            {$ifdef Profiling} Profiler.Log(10 {measures segment push});{$endif}
+              result.results[rCube].TableData[j].Push(obj.Data[rowNo][measIds[j]]); // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
+            {$ifdef Profiling} Profiler.Log(10 {measures segment push});
+              id:=result.results[rCube];
+//              Profiler.Log('['+rcube+']=>['+toString(id.TableData[j].Data)+']');
+
+            {$endif}
         end;
 
     end;//end scanning table
     {$ifdef Profiling}
     Profiler.LogSegments(['Filtering','row id','col id','check subtotal','copy row','lookup & insert to row','row subtotal','col subtotal','dicing',' measures->updating',' measures->pushing','measure']);
     {$endif}
+    {$ifdef fpc}
     for i:=0 to result.results.Count-1 do
-      for j:=0 to high(result.results.Values.ToArray[i].TableData) do
-      {$ifdef use_collections}
-        result.results.Values.ToArray[i].TableData[j].Shrink;
-      {$else}
-        result.results.ValueList[i].TableData[j].shrink;
-      {$endif}
+      for j:=0 to high(result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData) do
+        result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData[j].Shrink;
+    {$endif}
     {$ifdef Profiling}
       Profiler.Log('Shrinking Results, scanning complete!');
 
@@ -1524,6 +1598,7 @@ begin
      i:=0;
      setLength(result.headers.rows,length(result.rows[0]));
      for i:=0 to high(result.rows) do begin
+
          if result.rows[i].indexOf(arrayCompFiller)>-1 then insert(i,result.rowsHeadSubTotals,length(result.rowsHeadSubTotals));
          for j:= 0 to high(result.rows[i]) do begin
            if (j<length(rowStack)) and (arrayComp(copy(result.rows[i], 0 ,j+1),rowStack[j].v, false,false)<>0) then begin
@@ -1558,29 +1633,16 @@ begin
 
    for i:=0 to result.results.Count-1 do begin
        for j:=0 to high(oprsIds) do begin
-       {$ifdef use_collections}
        if LowerCase(oprsIds[j].Name)='count' then
-         result.results.Values.ToArray[i].DataRecord[j]:=length(result.results.Values.ToArray[i].TableData[j].Data)//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
+         result.results.Values.ToArray[i].DataRecord[j]:=length(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif})//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
        else if LowerCase(oprsIds[j].Name)='distinct_count' then
-         result.results.Values.ToArray[i].DataRecord[j]:=Length(TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
+         result.results.Values.ToArray[i].DataRecord[j]:=Length(TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
        else if LowerCase(oprsIds[j].Name)='concat' then
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).tostring(', ','',false)
+         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).tostring(', ','',false)
        else if LowerCase(oprsIds[j].Name)='distinct_concat' then
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).unique().toString(', ','',false)
+         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).unique().toString(', ','',false)
        else
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).reduce(oprsIds[j].operation)
-       {$else}
-       if LowerCase(oprsIds[j].Name)='count' then
-         result.results.ValueList[i].DataRecord[j]:=length(result.results.ValueList[i].TableData[j].Data)//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-       else if LowerCase(oprsIds[j].Name)='distinct_count' then
-         result.results.ValueList[i].DataRecord[j]:=Length(TVariantArray(result.results.ValueList[i].TableData[j].Data).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-       else if LowerCase(oprsIds[j].Name)='concat' then
-         result.results.ValueList[i].DataRecord[j]:=TVariantArray(result.results.ValueList[i].TableData[j].Data).tostring(', ','',false)
-       else if LowerCase(oprsIds[j].Name)='distinct_concat' then
-         result.results.ValueList[i].DataRecord[j]:=TVariantArray(result.results.ValueList[i].TableData[j].Data).unique().toString(', ','',false)
-       else
-         result.results.ValueList[i].DataRecord[j]:=reduce<Variant>(result.results.ValueList[i].TableData[j].Data,oprsIds[j].operation)
-       {$endif}
+         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).reduce(oprsIds[j].operation)
        end;
    end;
    {$ifdef Profiling} Profiler.Log('Cube Reduction calculated');{$endif}
@@ -1588,10 +1650,10 @@ begin
    for i:=0 to high(result.rows) do begin
      setLength(Rw,0);
      for j:=0 to high(result.cols) do begin
-       id:=result.results[result.rows[i].concat(result.cols[j]).ToString(splitter,'',false)].DataRecord;
-       if length(id)=0 then id:=TDataRecord.Fill(length(measIds),'');
-       for k:=0 to high(id) do
-         insert(id[k],Rw,length(rw))
+       if not result.results.TryGetValue(result.rows[i].concat(result.cols[j]).ToString(splitter,'',false),id) then
+         id.DataRecord:=TDataRecord.Fill(length(measIds),'');
+       for k:=0 to high(id.DataRecord) do
+         insert(id.DataRecord[k],Rw,length(rw))
      end;
      insert(Rw,result.data,length(result.data));
    end;
@@ -1608,306 +1670,6 @@ begin
    {$ifdef Profiling} Profiler.Log('Cube finalized');{$endif}
 
 end;
-{$else}
-
-function cube(const obj:TObjData;const options:TTotalsOptions):TObjData;
-var
-  i, j, k, rowNo, m_span:integer;
-  rCube:string;
-  row, col, r, c, id, Rw:TDataRecord;
-  colStack, rowStack:array of TRecordStack;
-  dims, fieldNames :TStringDynArray;
-  cub:TTableData;
-  colsIds, rowsIds, filtIds, measIds:TIntegerDynArray;
-  rSort, cSort: array of boolean;
-  rowAgg ,colAgg {,tmpAgg}:THeader;
-  Aggs: THeaders;
-  oprsIds:array of TAggregation;
-  fieldTypes:array of THeaderType;
-  filtRow:boolean=false;
- // dimensions:  TDimensions ;
-//  data: TCubeData;
-  //_result:TResultData;
-
-  procedure calcVals;
-  var m,r,c:integer;formula:string;v:TDataRecord;vv:Variant;
-  begin
-        for m:=0 to high(obj.dimensions.Measures) do begin
-            for r:=0 to High(result.data) do begin
-                formula:=obj.dimensions.measures[m].formula;
-                if formula<>'' then
-                  for c:=0 to High(result.cols) do
-                    begin
-                        v:=result.cols[c];
-                        if result.data[r][c*length(obj.dimensions.measures)+m]='' then exit;
-                        result.data[r][c*length(obj.dimensions.measures)+m]:=eval(
-                                formula.replace('{val}',result.data[r][c*length(obj.dimensions.measures)+m],[rfReplaceAll])
-                                .replace('{colTotal}',result.results[TDataRecord.Fill(Length(obj.dimensions.rows),arrayCompFiller).concat(v).ToString('#9','',false)].DataRecord[m],[rfReplaceAll])
-                                .replace('{rowTotal}',result.results[result.rows[r].concat(TDataRecord.Fill(length(obj.dimensions.cols),arrayCompFiller)).ToString('#9','',false)].DataRecord[m],[rfReplaceAll])
-                                .replace('{grandTotal}',result.results[TDataRecord.Fill(length(obj.dimensions.cols)+length(obj.dimensions.rows),arrayCompFiller).ToString('#9','',false)].DataRecord[m],[rfReplaceAll])
-                        );
-                    end;
-                if obj.dimensions.measures[m].decimals>=0 then
-                    for c:=0 to High(result.cols) do begin
-                        vv:=result.data[r][c*Length(obj.dimensions.measures)+m];
-                        if (TVarData(vv).vtype in [varEmpty,varNull])
-                          or VarIsStr(vv) then
-                            exit;
-                        if TVarData(vv).vtype in varsOrdinal then
-                          result.data[r][c*Length(obj.dimensions.measures)+m]:=format('%n',[double(vv)])
-                        else if TVarData(vv).vtype in varsFloats then
-                          result.data[r][c*Length(obj.dimensions.measures)+m]:=format('%.'+obj.dimensions.measures[m].decimals.ToString+'n',[double(vv)]) ;
-                    end;
-            end
-        end
-  end;
-
-begin
-  {$ifdef Profiling}  Profiler.start; {$endif}
-
-    setLength(fieldNames,length(obj.Headers.Columns[0]));
-    setLength(fieldTypes,length(fieldNames));
-
-    for i:=0 to High(obj.Headers.Columns[0]) do begin
-        fieldNames[i]:=obj.Headers.Columns[0][i].name;
-        fieldTypes[i]:=obj.Headers.Columns[0][i].typ;
-    end;
-
-    setLength(rowsIds,length(obj.dimensions.rows));for i:=0 to High(obj.dimensions.rows) do begin
-      rowsIds[i]:=fieldNames.indexOf(obj.dimensions.rows[i]);
-      if rowsIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[obj.dimensions.rows[i]]);
-    end;
-    setLength(colsIds,length(obj.dimensions.cols));for i:=0 to High(obj.dimensions.cols) do begin
-      colsIds[i]:=fieldNames.indexOf(obj.dimensions.cols[i]);
-      if colsIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[obj.dimensions.cols[i]]);
-    end;
-    setLength(measIds,length(obj.dimensions.measures)); setLength(oprsIds,length(obj.dimensions.measures));
-    for i:=0 to High(obj.dimensions.measures) do begin
-      measIds[i]:=fieldNames.indexOf(obj.dimensions.measures[i].field);
-      if measIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[obj.dimensions.measures[i].field]);
-      oprsIds[i]:=obj.dimensions.measures[i].operation;
-    end;
-
-    setLength(filtIds,length(obj.filters));
-    for i:=0 to High(obj.filters) do
-      filtIds[i]:=fieldNames.indexOf(obj.filters[i].fieldName);
-    push<TDataRecord>(result.rows,TDataRecord.fill(ifthen<Integer>(options.grandRows,ifthen<Integer>(length(rowsIds)>0,length(rowsIds),ifthen<Integer>(length(colsIds)>0,0,1)),1),arrayCompFiller)); //grand total columns
-    push<TDataRecord>(result.cols,TDataRecord.fill(ifthen<Integer>(options.grandCols,length(colsIds),0),arrayCompFiller)); //grand total rows
-    // add grand total row anyway (horizonal measures case)
-    setLength(rSort,length(obj.dimensions.rows));for i:=0 to high(obj.dimensions.rows) do rSort[i]:=IndexOf<String>(obj.descends,obj.dimensions.Rows[i])>=0;
-    setLength(cSort,length(obj.dimensions.cols));for i:=0 to high(obj.dimensions.cols) do cSort[i]:=IndexOf<String>(obj.descends,obj.dimensions.Cols[i])>=0;
-
-    setLength(row,length(rowsIds));
-    setLength(col,length(colsIds));
-    {$ifdef Profiling} Profiler.Log('Cube initialization.');{$endif}
-
-    for rowNo:=0 to high(obj.data) do begin
-        for j:=0 to high(filtIds) do
-            if obj.filters[j].data.Lookup(obj.Data[rowNo][filtIds[j]])<0 then
-              begin filtRow:=true;break;end;
-        if filtRow then begin filtRow:=false;continue end;                  // if filter list is inroduced then skip elements not in the filter list
-        {$ifdef Profiling} Profiler.Log(0 {filter segment});{$endif}
-
-        for i:=0 to high(rowsIds) do
-          row[i]:= obj.Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
-        {$ifdef Profiling} Profiler.Log(1 {row index segment});{$endif}
-
-        for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
-          col[i]:= obj.Data[rowNo][colsIds[i]];
-        {$ifdef Profiling} Profiler.Log(2 {col index segment});{$endif}
-
-        // calculate subtotal rows
-        for i:=ifthen<Integer>(options.subRows, 1, length(rowsIds)) to length(rowsIds) do begin
-            r:=copy(row,0,i).concat(TDataRecord.Fill(length(rowsIds)-i,arrayCompFiller));  // explore using TArray<FieldType> instead of TVariantArray?
-            //r:=slice<TDataRecord>(row,0,i).concat(TDataRecord.Fill(length(rowsIds)-i,arrayCompFiller));  // explore using TArray<FieldType> instead of TVariantArray?
-            j:=arrayLookup<TDataRecord>(result.rows,r,rSort,options.br);
-            if j<0 then
-              insert(r,result.rows,-j-1);
-              //splice<TTableData>(result.rows,-j-1,0,[r]);
-        end;
-        {$ifdef Profiling} Profiler.Log(3 {row Subtotal segment});{$endif}
-
-        // calculate subtotal columns
-        for i:=ifthen<Integer>(options.subCols,1,length(colsIds)) to length(colsIds) do begin
-            c:=copy(col,0,i).concat(TDataRecord.fill(length(colsIds)-i,arrayCompFiller));
-            //c:=slice<TDataRecord>(col,0,i).concat(TDataRecord.fill(length(colsIds)-i,arrayCompFiller));
-            k:=arrayLookup<TDataRecord>(result.cols,c,cSort,options.bc);
-            if k<0 then
-              Insert(c,result.cols,-k-1);
-              //splice<TTableData>(result.cols,-k-1,0,[c]);
-        end;
-        {$ifdef Profiling} Profiler.Log(4 {col Subtotal segment});{$endif}
-
-        // ********************* check factorial array multiplication from here
-        cub:=Dice(row.Slice(0,length(rowsIds)).concat(col.slice(0,length(colsIds))),arrayCompFiller,length(colsIds));
-        {$ifdef Profiling} Profiler.Log(5 {dicing segment});{$endif}
-
-        for i:=0 to high(cub) do  begin
-            rCube:=cub[i].toString(splitter,'',false);
-            {$ifdef use_collections}
-            if not result.results.ContainsKey(rCube) then
-              result.results.Add(rCube,TResults.Create(length(measIds),length(obj.data) ) );
-            {$else}
-            if not result.results.KeyExists(rCube) then
-              result.results[rCube]:=TResults.Create(length(measIds));
-            {$endif}
-
-            {$ifdef Profiling} Profiler.Log(6 {measures segment update});{$endif}
-            for j:=0 to High(measIds) do
-              //insert(obj.Data[rowNo][measIds[j]],result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
-              result.results[rCube].TableData[j].Add(obj.Data[rowNo][measIds[j]]); // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
-            {$ifdef Profiling} Profiler.Log(7 {measures segment push});{$endif}
-        end;
-
-    end;//end scanning table
-    {$ifdef Profiling}
-    Profiler.LogSegments(['Filtering','row id','col id','row lookup','col lookup','dicing',' measures->updating',' measures->pushing','measure']);
-    {$endif}
-    for i:=0 to result.results.Count-1 do
-      for j:=0 to high(result.results.Values.ToArray[i].TableData) do
-      {$ifdef use_collections}
-        result.results.Values.ToArray[i].TableData[j].Shrink;
-      {$else}
-        result.results.ValueList[i].TableData[j].shrink;
-      {$endif}
-    {$ifdef Profiling}
-      Profiler.Log('Shrinking Results, scanning complete!');
-
-    {$endif}
-
-    if Length(result.cols)>0 then begin
-        setLength(colStack,length(result.cols[0]));
-        for j:=0 to high(result.cols[0]) do begin
-            colStack[j].i:=0;
-            colStack[j].v:=result.cols[0].slice(0,j+1)
-        end;//i=0;
-        for i:=0 to high(result.cols) do begin
-            setLength(result.headers.columns,Length(result.cols[0]));
-            for j:=0 to high(result.cols[0]) do begin
-                if arrayComp(result.cols[i].Slice(0,j+1),colStack[j].v,false,false)<>0 then begin
-                    m_span:=i-colStack[j].i;
-                    Insert(THeader.Create({name:=}colStack[j].v[j],{typ:=}htString,{span:=}m_span * length(measIds)),result.headers.columns[j],Length(result.headers.columns[j]));
-                    colStack[j].i:=i;colStack[j].v:=result.cols[i].slice(0,j+1);
-                end
-            end;
-            // column identify subtotals
-            if result.cols[i].indexOf(arrayCompFiller)>-1 then
-                for j:=0 to high(measIds) do
-                      result.colsHeadSubTotals.push(i*length(measIds)+j)
-        end;
-        for i:=0 to high(result.cols) do
-          for j:=0 to high(obj.dimensions.measures) do begin
-            //tmpAgg.Name:=ifthen<string>(obj.dimensions.measures[j]._Label<>'', obj.dimensions.measures[j]._Label, oprsIds[j].Name+' of '+obj.dimensions.measures[j].Field);
-            //tmpAgg.typ:=Ifthen<THeaderType>(IndexOf<string>(['sum','count','distinct_count','distinct_sum','mean','average','mean','stddev','mode','median'], lowerCase(oprsIds[j].Name))>-1,htDouble,fieldTypes[measIds[j]]);
-            insert(
-              THeader.Create(
-                ifthen<string>(obj.dimensions.measures[j]._Label<>'', obj.dimensions.measures[j]._Label, oprsIds[j].Name+' of '+obj.dimensions.measures[j].Field),
-                Ifthen<THeaderType>(IndexOf<string>(['sum','count','distinct_count','distinct_sum','mean','average','mean','stddev','mode','median'], lowerCase(oprsIds[j].Name))>-1,htDouble,fieldTypes[measIds[j]])
-              )
-             ,Aggs,length(Aggs));
-          end;
-        Insert(Aggs,result.headers.columns,length(result.headers.columns));
-        for j:=0 to high(result.cols[0]) do begin
-              m_span:=length(result.cols) -colStack[j].i;
-              //with tmpAgg do begin Name:=colStack[j].v[j]; typ:=htString; span:=m_span*length(measIds) end;
-              insert(THeader.Create(colStack[j].v[j], htString, m_span*length(measIds)),result.headers.columns[j],length(result.headers.columns[j]));
-        end;
-
-    end;
-    {$ifdef Profiling} Profiler.Log('Cube Headers prepared');{$endif}
-
-   if length(result.rows)>0 then begin
-     for j:=0 to ifthen<Integer>(length(rowsIds)>0,length(rowsIds),ifthen<Integer>(length(colsIds)>0,0,1)) do begin
-          setLength(rowStack,j+1);rowStack[j].i:=0; rowStack[j].v:=slice<TDataRecord>(result.rows[0],0,j+1)
-     end;
-     i:=0;
-     setLength(result.headers.rows,length(result.rows[0]));
-     for i:=0 to high(result.rows) do begin
-         if result.rows[i].indexOf(arrayCompFiller)>-1 then result.rowsHeadSubTotals.Push(i);
-         for j:= 0 to high(result.rows[i]) do begin
-           if (j<length(rowStack)) and (arrayComp(result.rows[i].Slice(0,j+1),rowStack[j].v, false,false)<>0) then begin
-              m_span:= i-rowStack[j].i;
-              //if m_span=0 then
-              //  beep;              // for debugging
-              //setLength(result.headers.rows[j],length(result.headers.rows[j])+1);
-              //with result.headers.rows[j][high(result.headers.rows[j])] do begin
-              //  name := rowStack[j].v[j];
-              //  span:=m_span;
-              //  typ:=htString;
-              //end;
-              insert(THeader.create(rowStack[j].v[j],htString, m_span),result.headers.rows[j],length(result.headers.rows[j]));
-              setLength(result.headers.rows[j],high(result.headers.rows[j])+m_span) ;
-
-              rowStack[j].i:=i;rowStack[j].v:=result.rows[i].Slice(0,j+1);
-           end;
-          end
-     end;
-     for j:=0 to high(result.rows[0]) do begin
-       m_span:=length(result.rows) -rowStack[j].i;
-       //if m_span=0 then
-       //  beep;              // for debugging
-       //setLength(result.headers.rows[j],length(row[j])+1);
-       //with result.headers.rows[j][high(result.headers.rows[j])] do
-       //  begin name:= rowStack[j].v[j]; typ:=htString; Span:=m_span end;
-       insert(THeader.Create(rowStack[j].v[j], htString, m_span),result.headers.rows[j],length(result.headers.rows[j]));
-       setLength(result.headers.rows[j],high(result.headers.rows[j])+m_span);
-     end;
-   end;
-   {$ifdef Profiling} Profiler.Log('Cube SubTotals prepared');{$endif}
-
-   for i:=0 to result.results.Count-1 do begin
-      for j:=0 to high(oprsIds) do begin
-        if LowerCase(oprsIds[j].Name)='count' then
-        {$ifdef use_collections}
-          result.results.Values.ToArray[i].DataRecord[j]:=length(result.results.Values.ToArray[i].TableData[j].Data)//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-        else if LowerCase(oprsIds[j].Name)='distinct_count' then
-          result.results.Values.ToArray[i].DataRecord[j]:=Length(TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-        else if LowerCase(oprsIds[j].Name)='concat' then
-          result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).tostring(', ','',false)
-        else if LowerCase(oprsIds[j].Name)='distinct_concat' then
-          result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j].Data).unique().toString(', ','',false)
-        else
-          result.results.Values.ToArray[i].DataRecord[j]:=reduce<Variant>(result.results.Values.ToArray[i].TableData[j].Data,oprsIds[j].operation)
-        {$else}
-        result.results.ValueList[i].DataRecord[j]:=length(result.results.ValueList[i].TableData[j].Data)//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-      else if LowerCase(oprsIds[j].Name)='distinct_count' then
-        result.results.ValueList[i].DataRecord[j]:=Length(TVariantArray(result.results.ValueList[i].TableData[j].Data).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
-      else if LowerCase(oprsIds[j].Name)='concat' then
-        result.results.ValueList[i].DataRecord[j]:=TVariantArray(result.results.ValueList[i].TableData[j].Data).tostring(', ','',false)
-      else if LowerCase(oprsIds[j].Name)='distinct_concat' then
-        result.results.ValueList[i].DataRecord[j]:=TVariantArray(result.results.ValueList[i].TableData[j].Data).unique().toString(', ','',false)
-      else
-        result.results.ValueList[i].DataRecord[j]:=reduce<Variant>(result.results.ValueList[i].TableData[j].Data,oprsIds[j].operation)
-
-        {$endif}
-       end;
-   end;
-   {$ifdef Profiling} Profiler.Log('Cube Reduction calculated');{$endif}
-
-   for i:=0 to high(result.rows) do begin
-     setLength(Rw,0);
-     for j:=0 to high(result.cols) do begin
-       id:=result.results[result.rows[i].concat(result.cols[j]).ToString(splitter,'',false)].DataRecord;
-       if length(id)=0 then id:=TDataRecord.Fill(length(measIds),'');
-       for k:=0 to high(id) do
-         insert(id[k],Rw,length(rw))
-     end;
-     result.data.push(Rw);
-   end;
-   if length(colsIds)>0 then
-     for i:=0 to high(measIds) do
-       insert((arrayLookup<TVariantArray>(result.cols ,TDataRecord.Fill(length(colsIds),arrayCompFiller)))*length(measIds)+i,result.colsHeadGrandTotals,length(result.colsHeadGrandTotals));
-       //insert((result.cols.lookup(TDataRecord.Fill(length(colsIds),arrayCompFiller)))*length(measIds)+i,result.colsHeadGrandTotals,length(result.colsHeadGrandTotals));
-   if length(rowsIds)>0 then
-     Insert(arrayLookup<TVariantArray>(result.rows,TDataRecord.Fill(length(rowsIds),arrayCompFiller)),result.rowsHeadGrandTotals,length(result.rowsHeadGrandTotals));
-     //Insert(result.rows.lookup(TDataRecord.Fill(length(rowsIds),arrayCompFiller)),result.rowsHeadGrandTotals,length(result.rowsHeadGrandTotals));
-   {$ifdef Profiling} Profiler.Log('Cube GrandTotals prepared');{$endif}
-   calcVals;
-   result.Dimensions:=obj.Dimensions;
-   {$ifdef Profiling} Profiler.Log('Cube finalized');{$endif}
-
-end;
-{$endif}
 
 function cube(const obj:TObjData):TObjData;
 begin
@@ -1916,7 +1678,7 @@ end;
 
 function _sum(const a, b: variant; const i: integer; const Arr: array of variant):variant;
 begin
-  result:=a+b
+  result:=double(a)+double(b)
 end;
 
 function _max(const a, b: variant; const i: integer; const Arr: array of variant):variant;
@@ -1992,7 +1754,7 @@ begin
   //{$else}
   SetLength(Ar,Length(Arr));
   Move(Arr[0],Ar[0],SizeOf(Variant)*Length(Arr));
-  {$ifdef fpc}TArrayHelper<Variant>.Sort{$else}TArray.Sort<Variant>{$endif}(Ar);
+  {$ifdef fpc}TVariantArray(Ar).Sort{$else}TArray.Sort<Variant>(Ar){$endif};
   if High(Ar)>-1 then begin
     k:=1;
     j:=1;
@@ -2076,10 +1838,11 @@ var i:integer;
 begin
   result:=-1;
   for i:=0 to High(Self) do
-    if Self[i]=AVal then begin
-      result:=i;
-      exit
-    end;
+    if TVarData(Self[i]).vType=TVarData(AVal).vType then
+      if Self[i]=AVal then begin
+        result:=i;
+        exit
+      end;
 end;
 
 function TVariantArrayHelper.Reduce(const func: TReduceCallback<Variant>): Variant;
@@ -2093,24 +1856,29 @@ end;
 
 function TVariantArrayHelper.Sort: TSelf;
 begin
-  {$ifdef fpc}TArrayHelper<Variant>.Sort{$else}TArray.Sort<Variant>{$endif}(Self);
+  {$ifdef fpc}
+  TCubeArr.QuickSort<Variant>(Self, 0, High(Self), false, compare)
+  {$else}TArray.Sort<Variant>(Self){$endif};
   Result:=Self
 end;
 
-function TVariantArrayHelper.ToString(const Seperator, quote: string; const Brackets: boolean): string;
+function TVariantArrayHelper.ToString(const Seperator: string;  const quote: string; const Brackets: boolean): string;
 var i:integer;
 begin
   result:='';
-  for i:=0 to High(Self ) do
-    result:=Result+Seperator+quote+string(Self[i])+quote ;
-  delete(result,1,Length(Seperator));
+  if length(Self)>0 then begin
+    for i:=0 to High(Self) do
+      result:=Result+Seperator+quote+string(Self[i])+quote ;
+    delete(result,1,Length(Seperator));
+  end;
   if Brackets then result:='['+result+']';
 end;
 
 function TVariantArrayHelper.Unique: TSelf;
 var i:integer;
 begin
-  {$ifdef fpc}TArrayHelper<Variant>.Sort{$else}TArray.Sort<Variant>{$endif}(Self);
+  setLength(result,0);
+  {$ifdef fpc}Sort(){$else}TArray.Sort<Variant>(Self){$endif};
   if High(Self)>-1 then Insert(Self[0],Result,length(Result));
 
   for I := 1 to High(Self) do
@@ -2119,11 +1887,24 @@ begin
 
 end;
 
+function TVariantArrayHelper.Push(const AValue: Variant): Integer;
+begin
+  Insert(AValue,Self,Length(Self));
+  result:=High(Self);
+end;
+
 class function TVariantArrayHelper.uniqueFilt(const a: TType; const i: integer; arr: TSelf): boolean;
 begin
   result:=true;
   if i>0 then
     result:=a<>arr[i-1];
+end;
+
+class function TVariantArrayHelper.Compare(const a, b: Variant): integer;
+begin
+  result:=1;
+  if a<b then result:=-1
+  else if a=b then result:=0
 end;
 
 
@@ -2140,10 +1921,14 @@ begin
     end;
 end;
 
-function TStringArrayHelper.Lookup(const str: string; const CaseSensitive: boolean): Int64;
+function TStringArrayHelper.Lookup(const str: string; const CaseSensitive: boolean):{$ifdef fpc}int64{$else} integer{$endif};
 begin
 
-   if not {$ifdef fpc}(TArrayHelper<string>.BinarySearch{$else}TArray.BinarySearch<string>{$endif}(Self,str,result)) then
+   if not {$ifdef fpc}
+     (TArrayHelper<string>.BinarySearch(Self,str,result))
+     {$else}
+     TArray.BinarySearch<string>(Self,str,result)
+     {$endif} then
      result:=-1
 end;
 

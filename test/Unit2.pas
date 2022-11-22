@@ -7,33 +7,36 @@ uses
   ,Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, DateUtils
   ,Vcl.ComCtrls, Vcl.Grids
   , DCube
-  {$ifdef Profiling}, hirestimer{$endif}
+  {$ifdef Profiling} , hirestimer {$endif}
   ;
 
 type
+
+  TPivotGrid=class(TStringGrid)
+    private
+      FDataObject:PObjData;
+      procedure setDataObject(AValue:PObjData);
+    public
+      procedure UpdateGrid;
+            property DataObject:PObjData read FDataObject write setDataObject;
+  end;
+
+
   TForm1 = class(TForm)
-    PageControl1: TPageControl;
-    Grid: TTabSheet;
-    Log: TTabSheet;
     Memo1: TMemo;
-    Edit1: TEdit;
-    BitBtn1: TBitBtn;
-    Button1: TButton;
-    grd: TStringGrid;
-    procedure FormCreate(Sender: TObject);
     procedure UpdateCubeDimention(Sender: TObject);
-    procedure BitBtn1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
-      DataObj:TObjData;
-    procedure DrawCube(const Cube: TObjData; Grid: TStringGrid);
-    function Logs(const str:string):integer;                          //    overload;
-//    function Logs(const fmt: string; vals: array of const): integer;      overload;      { Private declarations }
+
   public
     { Public declarations }
+    procedure DrawGrid(grd:TStringGrid);
   end;
 
 var
   Form1: TForm1;
+  Grid1:TPivotGrid;
+  DataObj:TObjData;
   Pivot: TPivotControl   ;
 
 implementation
@@ -42,7 +45,6 @@ implementation
 {$R *.dfm}
 
 function GenerateRecord():TDataRecord;
-var i:integer;
   const Columns=6;
 begin
   setLength(result,Columns);
@@ -57,113 +59,107 @@ end;
 
 
 
-procedure TForm1.BitBtn1Click(Sender: TObject);
-//var ar:TTableData;a:TDataRecord; bb:array of boolean;
+procedure TForm1.DrawGrid(grd: TStringGrid);
+
 begin
-//  bb:=[false,false];
-//  ar:=[['a','a'],['a','b'],['b','c']];
-//  a:=[100,300];
-//  Memo1.Lines.Add(format('%d',[sizeof(ar)]));
-////  Memo1.Lines.Add('%d',[arrayLookup<TDataRecord>(ar,a,bb,true)])
 
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
-
-  SetCurrentDir(ExtractFilePath(ParamStr(0)));
-  Pivot:=TPivotControl.Create(Self);
-  Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
-  Pivot.Parent:=Self;
-  Pivot.SendToBack;
-  PageControl1.Parent:=Pivot;
-  PageControl1.Align:=alClient;
-  //DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,1000000);
   DataObj.Headers.columns:=[[
-    THeader.Create('Provider',htString),
-    THeader.Create('Service',htString),
-    THeader.Create('Sector',htString),
-    THeader.Create('Quantity',htInteger),
-    THeader.Create('Price',htDouble),
-    THeader.Create('Date',htDateTime)
+  THeader.Create('Provider', htString),
+  THeader.Create('Service', htString),
+  THeader.Create('Sector',   htString),
+  THeader.Create('Quantity', htString),
+  THeader.Create('Price',    htString),
+  THeader.Create('Date',     htString)
   ]];
-  {$ifdef Profiling}Profiler.Start;{$endif}
-  for i:=0 to high(DataObj.Data) do
-    DataObj.Data[i]:=GenerateRecord;
-  {$ifdef Profiling}Profiler.Log(format('Data Generated! with [%d] row',[Length(DataObj.Data)]));{$endif}
-  //DataObj.SaveToFile(GetCurrentDir+'gentable.csv');
-  Pivot.DataObject:=@DataObj;
- {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr; {$endif}
+  setLength(DataObj.Data,100000);
+  for i:=0 to High(DataObj.Data) do
+    DataObj.Data[i]:=GenerateRecord  ;
 
-end;
-
-
-function TForm1.Logs(const str: string): integer;
-begin
-  result:=Memo1.Lines.Add(str);
+  Pivot:=TPivotControl.Create(Self);
+  Pivot.Parent:=Self;
+  Grid1:=TPivotGrid.Create(Self);
+  Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
+  Grid1.Parent:=Pivot    ;
+  Grid1.Options:=Grid1.Options+[TGridOption.goRangeSelect{,TGridOption.goEditing},TGridOption.goDrawFocusSelected];
+  Grid1.Align:=alClient;
+  Grid1.DoubleBuffered:=True;
+  Pivot.DataObject:=@DataObj
 end;
 
 procedure TForm1.UpdateCubeDimention(Sender: TObject);
 begin
   DataObj.Dimensions:=Pivot.Dimensions;
-  DrawCube(Cube(Pivot.DataObject^),grd)
+  Grid1.DataObject:=@Cube(DataObj)
+
 end;
 
-procedure TForm1.DrawCube(const Cube: TObjData; Grid: TStringGrid);
-var i,j,k, MeasureCount:integer;ss:string;
+
+
+
+
+{ TPivotGrid }
+
+procedure TPivotGrid.setDataObject(AValue: PObjData);
 begin
-   {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
-  logs('HEADERS LIST:');
-  for i:=0 to high(Cube.Headers.rows) do
-    Logs(format('    Headers.Rows[%d]: %s',[i,StringReplace(Cube.Headers.rows[i].toString,#$FF,'',[rfReplaceAll])]));
-  for i:=0 to high(Cube.Headers.Columns) do
-    Logs(format('    Headers.Columns[%d]: %s',[i,StringReplace(Cube.Headers.Columns[i].toString,#$FF,'',[rfReplaceAll])]));
-  logs('');
-  logs('LIST:');
-//  Logs('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
-//  Logs('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
-  logs('Result:');
+  if AValue<>FDataObject then
+    begin
+      FDataObject:=AValue;
 
-  for ss in Cube.results.Keys do
-    Logs(format('  %s => %s',[ss,Cube.results[ss].DataRecord.toString()]));
+    end;
+      UpdateGrid
+end;
 
+procedure TPivotGrid.UpdateGrid;
+var ro,co,ro1,co1,ro2,co2,i,j,k,MaxColWidth:integer;d:PObjData;  s:string;
+begin
+  ro1:=0;co1:=0; ro2:=0;co2:=0;
+  d:=FDataObject;
+  inc(co1,length(d.Headers.rows));
+  inc(ro1,length(d.Headers.columns));
+  if ro1>0 then inc(co2,length(d.Headers.columns[ro1-1]));
+  if co1>0 then inc(ro2,length(d.Headers.rows[co1-1]));
+  ColCount:=co1+co2;
+  RowCount:=ro1+ro2+ord(co1=0);
+  for i:=0 to ColCount-1 do
+   Cols[i].Clear;
 
-
-
-//  Grid.Clear;
-  MeasureCount:=length(Cube.Dimensions.Measures);
-  Grid.ColCount:=length(Cube.Dimensions.Rows)+Length(Cube.Headers.Columns[High(Cube.Headers.Columns)])+ord(not (assigned(Cube.Dimensions.Rows) or assigned(Cube.Dimensions.Cols)));
-
-  if assigned(Cube.Headers.rows) then
-    Grid.RowCount:=length(Cube.Dimensions.cols)+length(Cube.Headers.rows[High(Cube.Headers.rows)])+1
-  else
-    Grid.RowCount:=length(Cube.Dimensions.cols)+2;// make +1 row space for measure headers
-  Grid.FixedCols:=length(Cube.Headers.rows);
-  Grid.FixedRows:=length(Cube.Headers.columns);
-  Application.ProcessMessages;
-
-  for i:=0 to High(Cube.Headers.Columns) do begin
-    k:=0;
-    for j:=0 to High(Cube.Headers.Columns[i]) do begin
-      Grid.Cells[k+length(Cube.Headers.rows),i]:=Cube.Headers.Columns[i][j].Name.Replace(#$ff,'',[rfReplaceAll]);
-      inc(k,Cube.Headers.Columns[i][j].span) ;
+  for ro:=0 to ro1-1 do begin
+    co:=0;
+    i:=co+co1;
+    while co < length(d.Headers.columns[ro]) do begin
+      cells[i,ro]:=StringReplace(d.Headers.columns[ro][co].Name,#$ff,'',[rfReplaceall]);
+      inc(co);
+      inc(i,d.Headers.columns[ro][co].span)
     end;
   end;
 
-  for i:=0 to high(Cube.headers.Rows) do
-    for j:=0 to High(Cube.headers.Rows[i]) do begin
-      Grid.Cells[i,j+length(Cube.Headers.columns)]:=Cube.Headers.Rows[i][j].Name.Replace(#$ff,'',[rfReplaceAll]);
-    end;
+  for co := 0 to co1-1 do
+   for ro:=0 to ro2-1 do
+      cells[co,ro1+ro]:=StringReplace(d.Headers.Rows[co][ro].Name,#$ff,'',[rfReplaceall]);
 
-  for i:=0 to High(Cube.Data) do
-    for j:=0 to High(Cube.Data[i]) do
-      Grid.Cells[j+length(Cube.Headers.rows),i+length(Cube.Headers.columns)]:=Cube.Data[i][j];
-//  Grid.AutoSizeColumns;
+
+  with d^ do begin
+
+    for ro := 0 to High(Data) do
+      for co:=0 to High(Data[ro]) do
+        Cells[co1+co,ro1+ro]:=Data[ro][co]
+  end;
+
+  for i:=0 to ColCount-1 do  begin
+    for j:=0 to RowCount-1 do
+      MaxColWidth:= Max(MaxColWidth, Canvas.TextWidth(Cells[i,j])+12);
+    ColWidths[i]:=MaxColWidth
+  end;
+
+//  Form1.Memo1.lines.clear;
+//  for i:=0 to High(d.results.Keys) do
+//    Form1.Memo1.Lines.Add(format('[%s]=>[%s]',[d.results.Keys[i],d.results.Values[i].TableData[0]{$ifdef fpc}.Data{$endif}.ToString()]))
+
 end;
-
-
-
 
 end.

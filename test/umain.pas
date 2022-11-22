@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, StrUtils, SysUtils, Forms, Controls, Graphics, Dialogs, Grids,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube
+  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube, variants
   {$ifdef Profiling}, hirestimer{$endif} ;
 
 type
@@ -24,6 +24,7 @@ type
     TabSheet2: TTabSheet;
     Pivot:TPivotControl;
     procedure Button1Click(Sender: TObject);
+    procedure Edit1DblClick(Sender: TObject);
     procedure UpdateCubeDimention(Sender:TObject);
     procedure BitBtn1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -49,9 +50,9 @@ begin
   setLength(result,Columns);
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
-  result[2]:=RandomFrom(['Private','Public','NGO']);
-  result[3]:=random(100) ;
-  result[4]:=50+random(200)/4 ;
+  result[2]:=RandomFrom(['Private','Public','NGO','']);
+  result[3]:=random(100) ;      if result[3]>50 then VarClear(result[3]);
+  result[4]:=50+random(200)/4 ; if result[4]>80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
 end;
@@ -69,7 +70,7 @@ begin
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,1000000);
+  setLength(DataObj.Data,100000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',htString),
     THeader.Create('Service',htString),
@@ -165,6 +166,13 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   Log( Eval(Edit1.Text))
+end;
+
+procedure TForm1.Edit1DblClick(Sender: TObject);
+var v,w:variant;
+begin
+  w:=15.0 ;
+  Edit1.Text:=floattostr(double(v));
 end;
 
 procedure TForm1.BitBtn1Click(Sender: TObject);

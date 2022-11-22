@@ -1,13 +1,14 @@
 object Form1: TForm1
-  Left = 391
-  Height = 834
-  Top = 291
+  Left = 125
+  Height = 811
+  Top = 601
   Width = 1180
-  Caption = 'Form1'
-  ClientHeight = 834
+  Caption = 'Pivot Test (Drag any available field to Measures, Columns or Rows)'
+  ClientHeight = 811
   ClientWidth = 1180
+  DesignTimePPI = 144
   OnCreate = FormCreate
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.2.0'
   Scaled = False
   object PageControl1: TPageControl
     Left = 342
@@ -67,13 +68,14 @@ object Form1: TForm1
         Height = 33
         Top = 0
         Width = 258
+        OnDblClick = Edit1DblClick
         TabOrder = 2
         Text = 'Edit1'
       end
       object Button1: TButton
         Left = 288
-        Height = 38
-        Top = 0
+        Height = 28
+        Top = 4
         Width = 112
         Caption = 'Button1'
         OnClick = Button1Click
