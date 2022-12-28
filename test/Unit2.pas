@@ -51,8 +51,9 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO']);
-  result[3]:=random(100) ;
-  result[4]:=50+random(200)/4 ;
+  result[3]:=random(100) ;   if Random>0.5 then VarClear(result[3]);
+
+  result[4]:=50+random(200)/4 ;  if Random>0.5 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
 end;
@@ -76,7 +77,7 @@ begin
   THeader.Create('Price',    htString),
   THeader.Create('Date',     htString)
   ]];
-  setLength(DataObj.Data,100000);
+  setLength(DataObj.Data,20);
   for i:=0 to High(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord  ;
 
@@ -128,28 +129,42 @@ begin
   for i:=0 to ColCount-1 do
    Cols[i].Clear;
 
+  // fill column headers
+
   for ro:=0 to ro1-1 do begin
     co:=0;
     i:=co+co1;
     while co < length(d.Headers.columns[ro]) do begin
       cells[i,ro]:=StringReplace(d.Headers.columns[ro][co].Name,#$ff,'',[rfReplaceall]);
+      inc(i,d.Headers.columns[ro][co].span);
       inc(co);
-      inc(i,d.Headers.columns[ro][co].span)
     end;
   end;
 
-  for co := 0 to co1-1 do
-   for ro:=0 to ro2-1 do
-      cells[co,ro1+ro]:=StringReplace(d.Headers.Rows[co][ro].Name,#$ff,'',[rfReplaceall]);
+  // fill row headers
+  for co:=0 to co1-1 do begin
+    ro:=0;
+    i:=ro+ro1;
+    while ro < length(d.Headers.rows[co]) do begin
+      cells[co,i]:=StringReplace(d.Headers.rows[co][ro].Name,#$ff,'',[rfReplaceall]);
+      inc(i,d.Headers.rows[co][ro].span);
+      inc(ro);
+    end;
+  end;
 
+//
+//  for co := 0 to co1-1 do
+//   for ro:=0 to ro2-1 do
+//      cells[co,ro1+ro]:=StringReplace(d.Headers.Rows[co][ro].Name,#$ff,'',[rfReplaceall]);
 
+  // fill data
   with d^ do begin
-
     for ro := 0 to High(Data) do
       for co:=0 to High(Data[ro]) do
         Cells[co1+co,ro1+ro]:=Data[ro][co]
   end;
 
+  // fit the StringGrid cells width
   for i:=0 to ColCount-1 do  begin
     for j:=0 to RowCount-1 do
       MaxColWidth:= Max(MaxColWidth, Canvas.TextWidth(Cells[i,j])+12);

@@ -1,5 +1,5 @@
 ﻿unit dcube;
-
+{H+}
 {$ifdef fpc}
   {$mode delphi}
   {$ModeSwitch advancedrecords}
@@ -983,29 +983,34 @@ begin
   inherited Create(AOwner);
   Align:=alClient;
 
-  FColumnsPan      :=TDimensionPan.Create(AOwner);
-  FColumnsPan.Caption:='Columns';
-  FColumnsPan.Align:=alTop;
-  //{$ifdef fpc}FColumnsPan.ChildSizing.SetGridSpacing(panSpacing);  {$endif}
-  FColumnsPan.Parent:=Self;
-
-  FMeasuresPan:=TDimensionPan.Create(AOwner);
-  FMeasuresPan.Caption:='Measures';
-  FMeasuresPan.Align:=alTop;
-  //{$ifdef fpc}FMeasuresPan.ChildSizing.SetGridSpacing(panSpacing); {$endif}
-  FMeasuresPan.Parent:=Self;
 
   FFieldsPan      :=TDimensionPan.Create(AOwner);
   FFieldsPan.Caption:='Available Fields';
-  FFieldsPan.Align:=alTop;
-//  {$ifdef fpc}FFieldsPan.ChildSizing.SetGridSpacing(panSpacing);  {$endif}
+  FFieldsPan.top:=1000;
+  //  {$ifdef fpc}FFieldsPan.ChildSizing.SetGridSpacing(panSpacing);  {$endif}
   FFieldsPan.Parent:=Self;
+
+  FMeasuresPan:=TDimensionPan.Create(AOwner);
+  FMeasuresPan.Caption:='Measures';
+  FMeasuresPan.Top:=1001;
+  //{$ifdef fpc}FMeasuresPan.ChildSizing.SetGridSpacing(panSpacing); {$endif}
+  FMeasuresPan.Parent:=Self;
+
+  FColumnsPan      :=TDimensionPan.Create(AOwner);
+  FColumnsPan.Caption:='Columns';
+  FColumnsPan.Top:=1002;
+  //{$ifdef fpc}FColumnsPan.ChildSizing.SetGridSpacing(panSpacing);  {$endif}
+  FColumnsPan.Parent:=Self;
 
   FRowsPan   :=TDimensionPan.Create(AOwner);
   FRowsPan.Caption:='Rows';
-  FRowsPan.Align   :=alLeft;
 //  {$ifdef fpc}FRowsPan.ChildSizing.SetGridSpacing(panSpacing);   {$endif}
   FRowsPan.Parent:=Self;
+
+  FFieldsPan.Align:=alTop;
+  FMeasuresPan.Align:=alTop;
+  FColumnsPan.Align:=alTop;
+  FRowsPan.Align   :=alLeft;
 
 
 end;
@@ -1285,6 +1290,7 @@ var I,J ,neg :integer;
     P, Q :T;
 begin
  //if not Assigned(Compare) then Compare:=@{$ifdef fpc}specialize{$endif}_Compare<T>;
+ //if length(Arr)=0 then exit;
  neg:=ifthen<integer>(descending,-1,1);
  repeat
    I := L;
@@ -1404,6 +1410,7 @@ var
  // dimensions:  TDimensions ;
 //  data: TCubeData;
   //_result:TResultData;
+  val:Variant;
 
   procedure calcVals;
   var m,r,c:integer;formula:string;v:TDataRecord;vv:Variant;
@@ -1526,14 +1533,18 @@ begin
             if not result.results.ContainsKey(rCube) then
               result.results.Add(rCube,TResults.Create(length(measIds),length(obj.data) ) );
             {$ifdef Profiling} Profiler.Log(9 {measures segment update});{$endif}
-            for j:=0 to High(measIds) do
+            for j:=0 to High(measIds) do begin
               //insert(obj.Data[rowNo][measIds[j]],result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
-              result.results[rCube].TableData[j].Push(obj.Data[rowNo][measIds[j]]); // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
+              val:=obj.Data[rowNo][measIds[j]];
+              if not varIsEmpty(val) then
+                result.results[rCube].TableData[j].Push(val);
+              // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
             {$ifdef Profiling} Profiler.Log(10 {measures segment push});
               id:=result.results[rCube];
 //              Profiler.Log('['+rcube+']=>['+toString(id.TableData[j].Data)+']');
 
             {$endif}
+            end;
         end;
 
     end;//end scanning table
@@ -1848,6 +1859,7 @@ end;
 function TVariantArrayHelper.Reduce(const func: TReduceCallback<Variant>): Variant;
 var i:integer;
 begin
+  VarClear(Result);
   if High(Self)>-1 then
     result:=Self[0];
   for i:=1 to high(self) do
@@ -1877,6 +1889,7 @@ end;
 function TVariantArrayHelper.Unique: TSelf;
 var i:integer;
 begin
+  if not Assigned(Self) then exit;// early exit
   setLength(result,0);
   {$ifdef fpc}Sort(){$else}TArray.Sort<Variant>(Self){$endif};
   if High(Self)>-1 then Insert(Self[0],Result,length(Result));

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, StrUtils, SysUtils, Forms, Controls, Graphics, Dialogs, Grids,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, ArrayHelper, dcube, variants
+  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, dcube, variants, UxTheme, Themes
   {$ifdef Profiling}, hirestimer{$endif} ;
 
 type
@@ -51,7 +51,7 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO','']);
-  result[3]:=random(100) ;      if result[3]>50 then VarClear(result[3]);
+  result[3]:=random(100)      ; if result[3]>50 then VarClear(result[3]);
   result[4]:=50+random(200)/4 ; if result[4]>80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
@@ -62,6 +62,7 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
+  SetThemeAppProperties(STAP_ALLOW_NONCLIENT or STAP_ALLOW_CONTROLS or STAP_ALLOW_WEBCONTENT);
   SetCurrentDir(ExtractFilePath(ParamStr(0)));
   Pivot:=TPivotControl.Create(Self);
   Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
@@ -92,24 +93,24 @@ end;
 procedure TForm1.DrawCube(const Cube: TObjData; Grid: TStringGrid);
 var i,j,k, MeasureCount:integer; ss:string;
 begin
-  {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
-  log('HEADERS LIST:');
-  for i:=0 to high(Cube.Headers.rows) do
-    Log(format('    Headers.Rows[%d]: %s',[i,StringReplace(Cube.Headers.rows[i].toString,#$FF,'',[rfReplaceAll])]));
-  for i:=0 to high(Cube.Headers.Columns) do
-    Log(format('    Headers.Columns[%d]: %s',[i,StringReplace(Cube.Headers.Columns[i].toString,#$FF,'',[rfReplaceAll])]));
-  log('');
-  log('LIST:');
-  Log('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
-  Log('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
-  log('Result:');
+  //{$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;{$endif}
+  //log('HEADERS LIST:');
+  //for i:=0 to high(Cube.Headers.rows) do
+  //  Log(format('    Headers.Rows[%d]: %s',[i,StringReplace(Cube.Headers.rows[i].toString,#$FF,'',[rfReplaceAll])]));
+  //for i:=0 to high(Cube.Headers.Columns) do
+  //  Log(format('    Headers.Columns[%d]: %s',[i,StringReplace(Cube.Headers.Columns[i].toString,#$FF,'',[rfReplaceAll])]));
+  //log('');
+  //log('LIST:');
+  //Log('    Rows: '+StringReplace(Cube.rows.ToString(),#$FF,'',[rfReplaceAll] ));
+  //Log('    Cols: '+StringReplace(Cube.cols.ToString(),#$FF,'',[rfReplaceAll] ));
+  //log('Result:');
 
   //for ss in Cube.results.Keys do
   //  Log('  %s => %s',[ss,Cube.results[ss].DataRecord.toString()]);
 
 
 
-
+  exit;
   Grid.Clear;
   MeasureCount:=length(Cube.Dimensions.Measures);
   Grid.ColCount:=length(Cube.Dimensions.Rows)+Length(Cube.Headers.Columns[High(Cube.Headers.Columns)])+ord(not (assigned(Cube.Dimensions.Rows) or assigned(Cube.Dimensions.Cols)));
@@ -164,8 +165,29 @@ begin
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
+var
+  i:integer;
+  ar,ab:array of variant;
+
+  function InitWord:integer;
+  var i:integer;
+  begin
+//    setLength(result,RandomRange(3,4));
+    result:=randomrange(1,100);
+
+  end;
+
 begin
-  Log( Eval(Edit1.Text))
+  setLength(ar,10000000);
+  for i:=0 to high(ar) do ar[i]:=initWord ;
+  ShowMessage('Will sort now, hang on...');
+  TVariantArray(ar).Sort;
+  ShowMessage('Will Unique now, hang on...');
+  ab:=TVariantArray(ar).Unique;
+  Log(TVariantArray(ab).toString) ;
+
+
+ // Log( Eval(Edit1.Text))
 end;
 
 procedure TForm1.Edit1DblClick(Sender: TObject);
