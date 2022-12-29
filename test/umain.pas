@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, StrUtils, SysUtils, Forms, Controls, Graphics, Dialogs, Grids,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, dcube, variants, UxTheme, Themes
+  StdCtrls, ExtCtrls, ComCtrls, Buttons, Math, dcube, variants
   {$ifdef Profiling}, hirestimer{$endif} ;
 
 type
@@ -51,8 +51,8 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO','']);
-  result[3]:=random(100)      ; if result[3]>50 then VarClear(result[3]);
-  result[4]:=50+random(200)/4 ; if result[4]>80 then VarClear(result[4]);
+  result[3]:=random(100)      ;// if result[3]>50 then VarClear(result[3]);
+  result[4]:=50+random(200)/4 ;// if result[4]>80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
 end;
@@ -62,7 +62,6 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
-  SetThemeAppProperties(STAP_ALLOW_NONCLIENT or STAP_ALLOW_CONTROLS or STAP_ALLOW_WEBCONTENT);
   SetCurrentDir(ExtractFilePath(ParamStr(0)));
   Pivot:=TPivotControl.Create(Self);
   Pivot.OnUpdateCubeDimenstion:=UpdateCubeDimention;
@@ -110,7 +109,8 @@ begin
 
 
 
-  exit;
+  //exit;
+
   Grid.Clear;
   MeasureCount:=length(Cube.Dimensions.Measures);
   Grid.ColCount:=length(Cube.Dimensions.Rows)+Length(Cube.Headers.Columns[High(Cube.Headers.Columns)])+ord(not (assigned(Cube.Dimensions.Rows) or assigned(Cube.Dimensions.Cols)));
@@ -153,14 +153,33 @@ begin
 end;
 
 procedure TForm1.UpdateCubeDimention(Sender: TObject);
+
+var
+  dObj: TObjData;
 begin
   DataObj.Dimensions:=Pivot.Dimensions;
   //defaultTotalsOption.subCols:=false;
   //defaultTotalsOption.subRows:=false;
   //defaultTotalsOption.grandCols:=false;
   //defaultTotalsOption.grandRows:=false;
+  dObj:=Cube(DataObj);
+  {$ifdef Profiling}
+  Profiler.Stop;
+  Log(Profiler.LogStr);
+  Application.ProcessMessages;
+  Profiler.Start;
 
-  DrawCube(Cube(DataObj),grd);
+  {$endif}
+
+  DrawCube(dObj,grd);
+  {$ifdef Profiling}
+  Profiler.Log('Pivot Grid Draw...');
+  Log(Profiler.LogStr);
+  Application.ProcessMessages;
+  Profiler.Stop
+  {$endif}
+
+
   //
 end;
 

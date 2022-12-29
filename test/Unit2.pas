@@ -77,7 +77,7 @@ begin
   THeader.Create('Price',    htString),
   THeader.Create('Date',     htString)
   ]];
-  setLength(DataObj.Data,20);
+  setLength(DataObj.Data,1000000);
   for i:=0 to High(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord  ;
 

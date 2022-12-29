@@ -190,7 +190,7 @@ type
 
   { TResults }
   TResults=record
-    TableData:{$ifdef fpc}TTableData2<Variant>{$else}TTableData{$endif};
+    TableData:{$ifdef TABLEDATA2}TTableData2<Variant>{$else}TTableData{$endif};
     DataRecord:TDataRecord;
     constructor Create(const MeasureCount,RowCount:integer);
   end;
@@ -1033,10 +1033,10 @@ constructor TResults.Create(const MeasureCount,RowCount:integer);
 var i:integer;
 begin
   setLength(TableData,MeasureCount);
-  {.$ifdef fpc}
+  {$ifdef TABLEDATA2}
   for i:=0 to high(TableData) do
-    setLength(TableData[i]{$ifdef fpc}.Data,RowCount{$else},0{$endif});
-  {.$endif}
+    setLength(TableData[i]{$ifdef TABLEDATA2}.Data,RowCount{$else},0{$endif});
+  {$endif}
   setLength(DataRecord,MeasureCount);
   //
 end;
@@ -1397,6 +1397,7 @@ var
   rCube:string;
   row, col, r, c, Rw:TDataRecord;
   id:TResults;
+  resultValues:TArray<TResults>;
   colStack, rowStack:array of TRecordStack;
   fieldNames :TStringDynArray;
   cub:TTableData;
@@ -1445,6 +1446,15 @@ var
         end
   end;
 
+  function isFiltered(const checkRow:integer):boolean;
+  var jj:integer;
+  begin
+    for jj:=0 to high(filtIds) do
+       if obj.filters[jj].data.Lookup(obj.Data[checkRow][filtIds[jj]])<0 then
+         begin result:=true;break;end;
+    //if filtRow then begin filtRow:=false;continue end;                  // if filter list is inroduced then skip elements not in the filter list
+  end;
+
 begin
   {$ifdef Profiling}  Profiler.start; {$endif}
     filtRow:=false;
@@ -1470,10 +1480,10 @@ begin
       if measIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[obj.dimensions.measures[i].field]);
       oprsIds[i]:=obj.dimensions.measures[i].operation;
     end;
-
     setLength(filtIds,length(obj.filters));
     for i:=0 to High(obj.filters) do
       filtIds[i]:=fieldNames.indexOf(obj.filters[i].fieldName);
+
     Insert(TDataRecord.fill(TCubeArr.ifthen<Integer>(options.grandRows,TCubeArr.ifthen<Integer>(length(rowsIds)>0,length(rowsIds),TCubeArr.ifthen<Integer>(length(colsIds)>0,0,1)),1),arrayCompFiller),result.rows,length(result.Rows)); //grand total columns
     Insert(TDataRecord.fill(TCubeArr.ifthen<Integer>(options.grandCols,length(colsIds),0),arrayCompFiller),result.cols,length(result.cols)); //grand total rows
     // add grand total row anyway (horizonal measures case)
@@ -1482,36 +1492,24 @@ begin
 
     setLength(row,length(rowsIds));
     setLength(col,length(colsIds));
-    {$ifdef Profiling} Profiler.Log('Cube initialization.');{$endif}
-
-    for rowNo:=0 to high(obj.data) do begin
-        for j:=0 to high(filtIds) do
-            if obj.filters[j].data.Lookup(obj.Data[rowNo][filtIds[j]])<0 then
-              begin filtRow:=true;break;end;
-        if filtRow then begin filtRow:=false;continue end;                  // if filter list is inroduced then skip elements not in the filter list
-        {$ifdef Profiling} Profiler.Log(0 {filter segment});{$endif}
-
+    {$ifdef Profiling} Profiler.Log('Initialization...'); {$endif}
+    for rowNo:=0 to High(obj.Data) do begin
+        if isFiltered(rowNo) then continue;
         for i:=0 to high(rowsIds) do
           row[i]:= obj.Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
-        {$ifdef Profiling} Profiler.Log(1 {row index });{$endif}
 
         for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
           col[i]:= obj.Data[rowNo][colsIds[i]];
-        {$ifdef Profiling} Profiler.Log(2 {col index });{$endif}
 
         // calculate subtotal rows
         for i:=TCubeArr.ifthen<Integer>(options.subRows, 1, length(rowsIds)) to length(rowsIds) do begin
-          {$ifdef Profiling} Profiler.Log(3 {col index });{$endif}
             r:=copy(row,0,i).concat(TDataRecord.Fill(length(rowsIds)-i,arrayCompFiller));  // explore using TArray<FieldType> instead of TVariantArray?
             //r:=slice<TDataRecord>(row,0,i).concat(TDataRecord.Fill(length(rowsIds)-i,arrayCompFiller));  // explore using TArray<FieldType> instead of TVariantArray?
-            {$ifdef Profiling} Profiler.Log(4 {col index });{$endif}
             j:=TCubeArr.arrayLookup(result.rows,r,rSort,options.br);
             if j<0 then
               insert(r,result.rows,-j-1);
               //splice<TTableData>(result.rows,-j-1,0,[r]);
-           {$ifdef Profiling} Profiler.Log(5 {col index });{$endif}
         end;
-        {$ifdef Profiling} Profiler.Log(6 {row Subtotal segment});{$endif}
 
         // calculate subtotal columns
         for i:=TCubeArr.ifthen<Integer>(options.subCols,1,length(colsIds)) to length(colsIds) do begin
@@ -1522,43 +1520,45 @@ begin
               Insert(c,result.cols,-k-1);
               //splice<TTableData>(result.cols,-k-1,0,[c]);
         end;
-        {$ifdef Profiling} Profiler.Log(7 {col Subtotal segment});{$endif}
+    end;
+    {$ifdef Profiling} Profiler.Log('Preparing Columns, Rows ...'); {$endif}
 
+
+    for rowNo:=0 to high(obj.data) do begin
+        if isFiltered(rowNo) then continue;
+        for i:=0 to high(rowsIds) do
+          row[i]:= obj.Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
+
+        for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
+          col[i]:= obj.Data[rowNo][colsIds[i]];
         // ********************* check factorial array multiplication from here
         cub:=Dice(copy(row,0,length(rowsIds)).concat(copy(col,0,length(colsIds))),arrayCompFiller,length(colsIds));
-        {$ifdef Profiling} Profiler.Log(8 {dicing segment});{$endif}
 
         for i:=0 to high(cub) do  begin
             rCube:=cub[i].toString(splitter,'',false);
             if not result.results.ContainsKey(rCube) then
               result.results.Add(rCube,TResults.Create(length(measIds),length(obj.data) ) );
-            {$ifdef Profiling} Profiler.Log(9 {measures segment update});{$endif}
             for j:=0 to High(measIds) do begin
-              //insert(obj.Data[rowNo][measIds[j]],result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
               val:=obj.Data[rowNo][measIds[j]];
               if not varIsEmpty(val) then
-                result.results[rCube].TableData[j].Push(val);
-              // measIds.forEach(function(el,idx){result[rCube][idx].push(obj.data[rowNo][el])})
-            {$ifdef Profiling} Profiler.Log(10 {measures segment push});
-              id:=result.results[rCube];
-//              Profiler.Log('['+rcube+']=>['+toString(id.TableData[j].Data)+']');
-
-            {$endif}
+                insert(val,result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
+              //if not varIsEmpty(val) then
+              //  TResults(result.results[rCube]).TableData[j].Push(val);
+              //id:=result.results[rCube];
             end;
         end;
 
     end;//end scanning table
     {$ifdef Profiling}
-    Profiler.LogSegments(['Filtering','row id','col id','check subtotal','copy row','lookup & insert to row','row subtotal','col subtotal','dicing',' measures->updating',' measures->pushing','measure']);
+    Profiler.Log('Scanning complete!...');
     {$endif}
-    {$ifdef fpc}
+    {$ifdef TABLEDATA2}
     for i:=0 to result.results.Count-1 do
       for j:=0 to high(result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData) do
         result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData[j].Shrink;
     {$endif}
     {$ifdef Profiling}
-      Profiler.Log('Shrinking Results, scanning complete!');
-
+      Profiler.Log('Shrinking Results');
     {$endif}
 
     if Length(result.cols)>0 then begin
@@ -1600,7 +1600,7 @@ begin
         end;
 
     end;
-    {$ifdef Profiling} Profiler.Log('Cube Headers prepared');{$endif}
+    {$ifdef Profiling} Profiler.Log('Cube Headers...');{$endif}
 
    if length(result.rows)>0 then begin
      for j:=0 to TCubeArr.ifthen<Integer>(length(rowsIds)>0,length(rowsIds),TCubeArr.ifthen<Integer>(length(colsIds)>0,0,1)) do begin
@@ -1640,20 +1640,20 @@ begin
        setLength(result.headers.rows[j],high(result.headers.rows[j])+m_span);
      end;
    end;
-   {$ifdef Profiling} Profiler.Log('Cube SubTotals prepared');{$endif}
-
+   {$ifdef Profiling} Profiler.Log('Cube SubTotals ...');{$endif}
+   resultValues:=result.results.Values.ToArray;
    for i:=0 to result.results.Count-1 do begin
        for j:=0 to high(oprsIds) do begin
        if LowerCase(oprsIds[j].Name)='count' then
-         result.results.Values.ToArray[i].DataRecord[j]:=length(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif})//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
+         resultValues[i].DataRecord[j]:=length(resultValues[i].TableData[j]{$ifdef TABLEDATA2}.Data{$endif})//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
        else if LowerCase(oprsIds[j].Name)='distinct_count' then
-         result.results.Values.ToArray[i].DataRecord[j]:=Length(TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
+         resultValues[i].DataRecord[j]:=Length(resultValues[i].TableData[j]{$ifdef TABLEDATA2}.Data{$endif}.unique())//reduce<Variant>(result.results.ValueList[i].TableData[j], oprsIds[j].operation, 0)
        else if LowerCase(oprsIds[j].Name)='concat' then
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).tostring(', ','',false)
+         resultValues[i].DataRecord[j]:=resultValues[i].TableData[j]{$ifdef TABLEDATA2}.Data{$endif}.tostring(', ','',false)
        else if LowerCase(oprsIds[j].Name)='distinct_concat' then
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).unique().toString(', ','',false)
+         resultValues[i].DataRecord[j]:=resultValues[i].TableData[j]{$ifdef TABLEDATA2}.Data{$endif}.unique().toString(', ','',false)
        else
-         result.results.Values.ToArray[i].DataRecord[j]:=TVariantArray(result.results.Values.ToArray[i].TableData[j]{$ifdef fpc}.Data{$endif}).reduce(oprsIds[j].operation)
+         resultValues[i].DataRecord[j]:=resultValues[i].TableData[j]{$ifdef TABLEDATA2}.Data{$endif}.reduce(oprsIds[j].operation)
        end;
    end;
    {$ifdef Profiling} Profiler.Log('Cube Reduction calculated');{$endif}

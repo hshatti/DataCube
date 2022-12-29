@@ -87,6 +87,7 @@
         <ShowCompProc Value="True"/>
         <ShowCond Value="True"/>
       </Verbosity>
+      <CustomOptions Value="-dProfiling"/>
     </Other>
   </CompilerOptions>
   <Debugging>
