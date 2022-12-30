@@ -90,7 +90,7 @@ type
     function Sort():TSelf;
     function Unique():TSelf;
     function Push(const AValue: Variant): Integer;
-    function Reduce(const func:TReduceCallback<Variant>):Variant;//  _SIMPLEREDUCE_;
+    function Reduce(const func:TReduceCallback<Variant>):Variant;
     class function Fill(ACount:integer;const AValue:Variant):TSelf;static;
     class function uniqueFilt(const a:TType;const i:integer;arr:TSelf):boolean;static;
     class function Compare(const a,b:Variant):integer;static;
@@ -134,7 +134,7 @@ type
   TTableData = TVariantArrayArray;
 
   { TDataRecord2 }
-
+  {$ifdef TABLEDATA2}
   TDataRecord2<T>=record                 // allocated heap data for cacheing
   private
     function GetCurrent: T;
@@ -154,7 +154,7 @@ type
   end;
 
   TTableData2<T> = array of TDataRecord2<T>;
-
+  {$endif}
   TRecordStack=record
     i:integer;
     v:TDataRecord;
@@ -222,8 +222,11 @@ type
 //  {$endif}
 
   TResultData=
-//  {$ifdef fpc}
-  TDictionary<string,TResults>
+  {$ifdef fpc}
+    TDictionary<string,TResults>
+  {$else}
+    TDictionary<string,TResults>
+  {$endif}
 //  {$else}
 //  TSortedKeyValueList<string,TResults>
 //  {$endif}
@@ -353,7 +356,16 @@ type
     class function cmp<T>(const a, b: T): integer;
   end;
 
-  function Eval(str:string):double;
+//function _sum(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _max(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _min(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _first(const a, b: variant; const i: integer;const  Arr: array of variant):variant;
+//function _last(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _count(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _average(const a, b: variant; const i: integer; const Arr: array of variant):variant;
+//function _median(const a, b: variant; const i: integer;const  Arr: array of variant):variant;
+//function _mode(const a, b: variant; const i: integer;const Arr: array of variant):Variant;
+//function _stddev(const a, b: variant; const i: integer; const Arr: array of variant):Variant;  function Eval(str:string):double;
   //function comp<T>(const a,b:T;const rev:boolean):integer;            overload;
   //function aComp<T>(const a,b:T;const rev:boolean):integer;           overload;
   //
@@ -362,8 +374,9 @@ type
 //  TIfthen = function (val:boolean;const iftrue:integer; const iffalse:integer) :integer ;
 //var
 //  ifthen :TIfthen;
+
 var
-  AggregationArray:array of TAggregation;
+  AggregationArray:array of TAggregation ;
   AggrStr :TStringDynArray;
   defaultTotalsOption:TTotalsOptions ;
 
@@ -591,6 +604,8 @@ end;
 //end;
 //
 //{$endif}
+
+{$ifdef TABLEDATA2}
 { TDataRecord2 }
 
 function TDataRecord2<T>.GetCurrent: T;
@@ -611,6 +626,9 @@ end;
 function TDataRecord2<T>.Push(const AValue: T): integer;
 begin
   inc(Indicator);
+  if Indicator>High(Data) then begin
+    setLength(Data,Indicator*2)
+  end;
   Data[indicator]:=AValue;
   result:=Indicator;
   //WriteLn(AValue);
@@ -645,7 +663,7 @@ begin
   for i:=1 to high(self) do
     result:=func(result,Self[i],i,Self)
 end;
-
+{$endif}
 { TVariantArray2DHelper }
 
 function TVariantArray2DHelper.ToString(const Seperator: string; const quote: string; const Brackets:boolean): string;
@@ -1035,7 +1053,7 @@ begin
   setLength(TableData,MeasureCount);
   {$ifdef TABLEDATA2}
   for i:=0 to high(TableData) do
-    setLength(TableData[i]{$ifdef TABLEDATA2}.Data,RowCount{$else},0{$endif});
+    TableData[i]:=TDataRecord2<Variant>.Create(RowCount);
   {$endif}
   setLength(DataRecord,MeasureCount);
   //
@@ -1066,7 +1084,7 @@ begin
     begin
       if LowerCase(ExtractFileExt(FileName))='.csv' then
         sp:=sl[0].split([','],'"')
-      else if LowerCase(ExtractFileExt(FileName))='.tab' then
+      else if (LowerCase(ExtractFileExt(FileName))= '.tab') or (LowerCase(ExtractFileExt(FileName))='.tsv') then
         sp:=sl[0].split([#9]);
       setLength(Headers.columns[0],length(sp));
       for i:=0 to High(sp) do with Headers.columns[0][i] do begin
@@ -1079,7 +1097,7 @@ begin
   if LowerCase(ExtractFileExt(FileName))='.csv' then
     for i:=1 to sl.Count-1 do
       Data[i]:=StringsToDataRec(sl[i].Split([','],'"'))
-  else if LowerCase(ExtractFileExt(FileName))='.tab' then
+  else if (LowerCase(ExtractFileExt(FileName))= '.tab') or (LowerCase(ExtractFileExt(FileName))='.tsv') then
     for i:=1 to sl.Count-1 do
       Data[i]:=StringsToDataRec(sl[i].Split([#9]));
   FreeAndNil(sl);
@@ -1094,17 +1112,18 @@ begin
     for j:=0 to High(sp) do  sp[j]:=Headers.columns[i][j].Name;
     if LowerCase(ExtractFileExt(FileName))='.csv' then
       sl.add(string.Join(',',sp))
-    else if LowerCase(ExtractFileExt(FileName))='.tab' then
+    else if (LowerCase(ExtractFileExt(FileName))= '.tab') or (LowerCase(ExtractFileExt(FileName))='.tsv') then
       sl.add(string.Join(#9,sp))
   end;
   if LowerCase(ExtractFileExt(FileName))='.csv' then
     for i:=0 to High(Data) do
       sl.add(Self.Data[i].ToString(',','',false))
-  else if LowerCase(ExtractFileExt(FileName))='.tab' then
+  else if (LowerCase(ExtractFileExt(FileName))= '.tab') or (LowerCase(ExtractFileExt(FileName))='.tsv') then
     for i:=0 to High(Data) do
       sl.add(data[i].ToString(#9,'',false)) ;
 
   sl.SaveToFile(FileName);
+
   FreeAndNil(sl)
 end;
 
@@ -1526,39 +1545,57 @@ begin
 
     for rowNo:=0 to high(obj.data) do begin
         if isFiltered(rowNo) then continue;
+        {$ifdef Profiling}
+                    Profiler.Log(0);
+        {$endif}
         for i:=0 to high(rowsIds) do
           row[i]:= obj.Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
 
         for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
           col[i]:= obj.Data[rowNo][colsIds[i]];
+        {$ifdef Profiling}
+                    Profiler.Log(1);
+        {$endif}
         // ********************* check factorial array multiplication from here
-        cub:=Dice(copy(row,0,length(rowsIds)).concat(copy(col,0,length(colsIds))),arrayCompFiller,length(colsIds));
 
+        cub:=Dice(copy(row,0,length(rowsIds)).concat(copy(col,0,length(colsIds))),arrayCompFiller,length(colsIds));
+        {$ifdef Profiling}
+                    Profiler.Log(2);
+        {$endif}
         for i:=0 to high(cub) do  begin
             rCube:=cub[i].toString(splitter,'',false);
-            if not result.results.ContainsKey(rCube) then
-              result.results.Add(rCube,TResults.Create(length(measIds),length(obj.data) ) );
+            if not result.results.tryGetValue(rCube,id) then begin
+              id:=TResults.Create(length(measIds),length(obj.data) div (length(result.Cols) + length(result.Rows)) );
+              result.results.Add(rCube,id);
+            end;
+            Profiler.Log(4);
             for j:=0 to High(measIds) do begin
               val:=obj.Data[rowNo][measIds[j]];
               if not varIsEmpty(val) then
-                insert(val,result.results[rCube].TableData[j],length(result.results[rCube].TableData[j]));
-              //if not varIsEmpty(val) then
-              //  TResults(result.results[rCube]).TableData[j].Push(val);
+                {$ifdef TABLEDATA2}
+                id.TableData[j].Push(val);
+                {$else}
+                insert(val,id.TableData[j],length(id.TableData[j]));
+                {$endif}
               //id:=result.results[rCube];
+              Profiler.Log(5);
             end;
         end;
-
+        {$ifdef Profiling}
+                    Profiler.Log(3);
+        {$endif}
     end;//end scanning table
     {$ifdef Profiling}
-    Profiler.Log('Scanning complete!...');
+      Profiler.LogSegments(['Filetering','Making Key','Dicing','Adding Measures','  --Lookng for hash','  --Pushing to array']);
+      Profiler.Log('Scanning Complete');
     {$endif}
     {$ifdef TABLEDATA2}
     for i:=0 to result.results.Count-1 do
       for j:=0 to high(result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData) do
         result.results.Values{$ifdef fpc}.ToArray{$endif}[i].TableData[j].Shrink;
-    {$endif}
-    {$ifdef Profiling}
-      Profiler.Log('Shrinking Results');
+      {$ifdef Profiling}
+      Profiler.Log('Shrinking...');
+      {$endif}
     {$endif}
 
     if Length(result.cols)>0 then begin
@@ -1798,21 +1835,6 @@ begin
 
 end;
 
-const
-    aggSum    :TAggregation=    (name:'Sum'    ; operation:_sum);
-    aggMax    :TAggregation=    (name:'Max'    ; operation:_max);
-    aggMin    :TAggregation=    (name:'Min'    ; operation:_min);
-    aggFirst  :TAggregation=    (name:'First'  ; operation:_first);
-    aggLast   :TAggregation=    (name:'Last'   ; operation:_last);
-    aggCount          :TAggregation=    (name:'Count'  ; operation:nil);
-    aggDistinctCount  :TAggregation=    (name:'Distinct_Count' ; operation:nil);
-    aggConcat         :TAggregation=    (name:'Concat'         ; operation:nil);
-    aggDistinctConcat :TAggregation=    (name:'Distinct_Concat'; operation:nil);
-    aggAverage:TAggregation=    (name:'Mean'   ; operation:_average);
-    aggMedian :TAggregation=    (name:'Median' ; operation:_median);
-    aggMode   :TAggregation=    (name:'Mode'   ; operation:_mode);
-    aggStdDev :TAggregation=    (name:'StdDev' ; operation:_stddev);
-
 
 { TVariantArrayHelper }
 
@@ -1945,6 +1967,20 @@ begin
      result:=-1
 end;
 
+const
+    aggSum    :TAggregation=    (name:'Sum'    ; operation:_sum);
+    aggMax    :TAggregation=    (name:'Max'    ; operation:_max);
+    aggMin    :TAggregation=    (name:'Min'    ; operation:_min);
+    aggFirst  :TAggregation=    (name:'First'  ; operation:_first);
+    aggLast   :TAggregation=    (name:'Last'   ; operation:_last);
+    aggCount          :TAggregation=    (name:'Count'  ; operation:nil);
+    aggDistinctCount  :TAggregation=    (name:'Distinct_Count' ; operation:nil);
+    aggConcat         :TAggregation=    (name:'Concat'         ; operation:nil);
+    aggDistinctConcat :TAggregation=    (name:'Distinct_Concat'; operation:nil);
+    aggAverage:TAggregation=    (name:'Mean'   ; operation:_average);
+    aggMedian :TAggregation=    (name:'Median' ; operation:_median);
+    aggMode   :TAggregation=    (name:'Mode'   ; operation:_mode);
+    aggStdDev :TAggregation=    (name:'StdDev' ; operation:_stddev);
 var i:integer;
 initialization
 
@@ -1964,6 +2000,8 @@ initialization
     aggStdDev
   ];
   for i:=0 to high(AggregationArray) do
-    Insert(AggregationArray[i].Name,AggrStr,length(AggrStr))
+    Insert(AggregationArray[i].Name,AggrStr,length(AggrStr))   ;
+
+
 end.
 

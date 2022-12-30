@@ -70,7 +70,7 @@ begin
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,100000);
+  setLength(DataObj.Data,10000000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',htString),
     THeader.Create('Service',htString),

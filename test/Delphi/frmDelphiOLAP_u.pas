@@ -1,4 +1,4 @@
-unit Unit2;
+unit frmDelphiOLAP_u;
 
 interface
 
@@ -80,6 +80,8 @@ begin
   setLength(DataObj.Data,1000000);
   for i:=0 to High(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord  ;
+
+  //DataObj.SaveToFile(ExtractFilePath(ParamStr(0))+'data.tsv');
 
   Pivot:=TPivotControl.Create(Self);
   Pivot.Parent:=Self;

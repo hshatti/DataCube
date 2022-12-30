@@ -1,8 +1,8 @@
-program Project2;
+program OLAPTest;
 
 uses
   Vcl.Forms,
-  Unit2 in 'Unit2.pas' {Form1};
+  frmDelphiOLAP_u in 'frmDelphiOLAP_u.pas' {Form1};
 
 {$R *.res}
 
