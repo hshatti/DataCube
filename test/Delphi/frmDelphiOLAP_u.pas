@@ -51,9 +51,9 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO']);
-  result[3]:=random(100) ;   if Random>0.5 then VarClear(result[3]);
+  result[3]:=random(100) ;       if Random>0.80 then VarClear(result[3]);
 
-  result[4]:=50+random(200)/4 ;  if Random>0.5 then VarClear(result[4]);
+  result[4]:=50+random(200)/4 ;  if Random>0.80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
 end;
@@ -70,18 +70,18 @@ procedure TForm1.FormCreate(Sender: TObject);
 var i:integer;
 begin
   DataObj.Headers.columns:=[[
-  THeader.Create('Provider', htString),
-  THeader.Create('Service', htString),
-  THeader.Create('Sector',   htString),
-  THeader.Create('Quantity', htString),
-  THeader.Create('Price',    htString),
-  THeader.Create('Date',     htString)
+  THeader.Create('Provider', varString),
+  THeader.Create('Service',  varString),
+  THeader.Create('Sector',   varString),
+  THeader.Create('Quantity', varString),
+  THeader.Create('Price',    varString),
+  THeader.Create('Date',     varString)
   ]];
   setLength(DataObj.Data,1000000);
   for i:=0 to High(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord  ;
 
-  //DataObj.SaveToFile(ExtractFilePath(ParamStr(0))+'data.tsv');
+//  DataObj.SaveToFile(ExtractFilePath(ParamStr(0))+'data.tsv');
 
   Pivot:=TPivotControl.Create(Self);
   Pivot.Parent:=Self;
@@ -97,7 +97,7 @@ end;
 procedure TForm1.UpdateCubeDimention(Sender: TObject);
 begin
   DataObj.Dimensions:=Pivot.Dimensions;
-  Grid1.DataObject:=@Cube(DataObj)
+  Grid1.DataObject:=@DataObj.cube()
 
 end;
 
@@ -112,7 +112,6 @@ begin
   if AValue<>FDataObject then
     begin
       FDataObject:=AValue;
-
     end;
       UpdateGrid
 end;

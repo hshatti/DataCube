@@ -1,19 +1,19 @@
 object Form1: TForm1
-  Left = 125
-  Height = 811
-  Top = 601
+  Left = 89
+  Height = 831
+  Top = 1099
   Width = 1180
   Caption = 'Pivot Test (Drag any available field to Measures, Columns or Rows)'
-  ClientHeight = 811
+  ClientHeight = 831
   ClientWidth = 1180
   DesignTimePPI = 144
   OnCreate = FormCreate
   LCLVersion = '2.2.2.0'
   Scaled = False
   object PageControl1: TPageControl
-    Left = 342
+    Left = 340
     Height = 594
-    Top = 234
+    Top = 236
     Width = 831
     ActivePage = TabSheet2
     TabIndex = 1
@@ -46,11 +46,12 @@ object Form1: TForm1
       ClientWidth = 823
       object Memo1: TMemo
         Left = 0
-        Height = 525
-        Top = 31
+        Height = 512
+        Top = 44
         Width = 823
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 0
       end
@@ -78,6 +79,7 @@ object Form1: TForm1
         Top = 4
         Width = 112
         Caption = 'Button1'
+        Color = clBlack
         OnClick = Button1Click
         TabOrder = 3
       end

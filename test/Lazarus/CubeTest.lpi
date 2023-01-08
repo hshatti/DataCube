@@ -66,6 +66,12 @@
       <OtherUnitFiles Value="..\..\..\Arrays\source\array;..\..\..\Arrays\source\highrestimer;..\..\..\Arrays\source\ml;..\..\..\Arrays\source\steroids;..\..\Source"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <DebugInfoType Value="dsDwarf2Set"/>
@@ -87,8 +93,8 @@
         <ShowCompProc Value="True"/>
         <ShowCond Value="True"/>
       </Verbosity>
-      <CustomOptions Value="-dProfiling
--dTABLEDATA2"/>
+      <CustomOptions Value="-dTABLEDATA2
+-dPROFILING"/>
     </Other>
   </CompilerOptions>
   <Debugging>

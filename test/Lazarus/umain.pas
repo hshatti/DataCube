@@ -51,8 +51,8 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO','']);
-  result[3]:=random(100)      ;// if result[3]>50 then VarClear(result[3]);
-  result[4]:=50+random(200)/4 ;// if result[4]>80 then VarClear(result[4]);
+  result[3]:=random(100)      ; if result[3]>50 then VarClear(result[3]);
+  result[4]:=50+random(200)/4 ; if result[4]>80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
 end;
@@ -70,19 +70,21 @@ begin
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,10000000);
+  setLength(DataObj.Data,1000000);
   DataObj.Headers.columns:=[[
-    THeader.Create('Provider',htString),
-    THeader.Create('Service',htString),
-    THeader.Create('Sector',htString),
-    THeader.Create('Quantity',htInteger),
-    THeader.Create('Price',htDouble),
-    THeader.Create('Date',htDateTime)
+    THeader.Create('Provider',varString),
+    THeader.Create('Service',varString),
+    THeader.Create('Sector',varString),
+    THeader.Create('Quantity',varInteger),
+    THeader.Create('Price',varDouble),
+    THeader.Create('Date',varDate)
   ]];
   {$ifdef Profiling}Profiler.Start;{$endif}
   for i:=0 to high(DataObj.Data) do
     DataObj.Data[i]:=GenerateRecord;
   {$ifdef Profiling}Profiler.Log(format('Data Generated! with [%d] row',[Length(DataObj.Data)]));{$endif}
+  //Dataobj.Data:=TServiceTools.TransformData(DataObj.Data);
+  //{$ifdef Profiling}Profiler.Log(format('Data Transform! with [%d] row',[Length(DataObj.Data)]));{$endif}
   //DataObj.SaveToFile(GetCurrentDir+'gentable.csv');
   Pivot.DataObject:=@DataObj;
  {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr; {$endif}
@@ -162,7 +164,8 @@ begin
   //defaultTotalsOption.subRows:=false;
   //defaultTotalsOption.grandCols:=false;
   //defaultTotalsOption.grandRows:=false;
-  dObj:=Cube(DataObj);
+  //dObj:=cube(DataObj);
+  dObj:=DataObj.cube();
   {$ifdef Profiling}
   Profiler.Stop;
   Log(Profiler.LogStr);
@@ -173,6 +176,9 @@ begin
 
   DrawCube(dObj,grd);
   {$ifdef Profiling}
+  Log('Cols :'+sLineBreak+dObj.Cols.ToString);
+  Log('Rows :'+sLineBreak+dObj.Rows.ToString);
+
   Profiler.Log('Pivot Grid Draw...');
   Log(Profiler.LogStr);
   Application.ProcessMessages;
@@ -186,8 +192,9 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   i:integer;
-  ar,ab:array of variant;
-
+  ar,ab, transposed:TTableData;
+  arr,abb:TVariantArray;
+  ColsIds:array of integer;
   function InitWord:integer;
   var i:integer;
   begin
@@ -197,13 +204,29 @@ var
   end;
 
 begin
-  setLength(ar,10000000);
-  for i:=0 to high(ar) do ar[i]:=initWord ;
+
+  {$ifdef Profiling}Profiler.start; {$endif}
+  Transposed := TServiceTools.TransposeData(DataObj.data);
+  {$ifdef Profiling}Profiler.Log('Data Transposed');   {$endif}
+  ar:=TServiceTools.SparseValues<TVariantArray>(transposed,[0,1]);
+  {$ifdef Profiling}Profiler.Log('Data Sliced');    {$endif}
+  ab:=TServiceTools.TransposeData(Ar);
+  {$ifdef Profiling}Profiler.Log('Data2 Transposed');   {$endif}
+  TServiceTools.arraySort(ab,0,High(ab),[true,false]);
+  {$ifdef Profiling}Profiler.Log('Data Sorted');      {$endif}
+  ab:=TServiceTools.arrayUnique(ab);
+  {$ifdef Profiling}Profiler.Log('Data Uniqued');   {$endif}
+  Log(ab.ToString);
+  {$ifdef Profiling}Log(Profiler.LogStr);       {$endif}
+  exit;
+
+  setLength(arr,10000000);
+  for i:=0 to high(arr) do arr[i]:=initWord ;
   ShowMessage('Will sort now, hang on...');
-  TVariantArray(ar).Sort;
+  TVariantArray(arr).Sort;
   ShowMessage('Will Unique now, hang on...');
-  ab:=TVariantArray(ar).Unique;
-  Log(TVariantArray(ab).toString) ;
+  abb:=TVariantArray(arr).Unique;
+  Log(TVariantArray(abb).toString) ;
 
 
  // Log( Eval(Edit1.Text))
