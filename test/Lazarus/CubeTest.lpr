@@ -1,6 +1,8 @@
 program CubeTest;
 
-{$mode objfpc}{$H+}  {$AppType Console}
+{$mode objfpc}{$H+}
+
+{$ifdef Profiling}{$AppType Console} {$endif}
 
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}

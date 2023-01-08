@@ -50,7 +50,8 @@
       <Unit0>
         <Filename Value="CubeTest.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="39" Y="3"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="15" Y="5"/>
         <UsageCount Value="312"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -76,10 +77,9 @@
       <Unit3>
         <Filename Value="..\..\Source\DCube.pas"/>
         <UnitName Value="dcube"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="2185"/>
-        <CursorPos X="90" Y="2207"/>
+        <TopLine Value="2161"/>
+        <CursorPos X="49" Y="2217"/>
         <UsageCount Value="101"/>
         <Loaded Value="True"/>
       </Unit3>
