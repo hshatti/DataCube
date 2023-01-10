@@ -3,7 +3,7 @@
   <ProjectSession>
     <PathDelim Value="\"/>
     <Version Value="12"/>
-    <BuildModes Count="1" Active="Debug">
+    <BuildModes Count="1" Active="Release">
       <Item1 Name="Release">
         <CompilerOptions>
           <Version Value="11"/>
@@ -46,11 +46,10 @@
         </CompilerOptions>
       </Item1>
     </BuildModes>
-    <Units Count="49">
+    <Units Count="46">
       <Unit0>
         <Filename Value="CubeTest.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <CursorPos X="15" Y="5"/>
         <UsageCount Value="312"/>
         <Loaded Value="True"/>
@@ -62,9 +61,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="uMain"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="42"/>
-        <CursorPos X="31" Y="71"/>
+        <TopLine Value="57"/>
+        <CursorPos X="21" Y="92"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -105,7 +105,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="890"/>
         <CursorPos X="41" Y="914"/>
-        <UsageCount Value="92"/>
+        <UsageCount Value="90"/>
       </Unit6>
       <Unit7>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\inc\generics.dictionaries.inc"/>
@@ -120,7 +120,7 @@
         <UnitName Value="Generics.MemoryExpanders"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="3" Y="35"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="19"/>
       </Unit8>
       <Unit9>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\generics.collections.pas"/>
@@ -128,14 +128,14 @@
         <EditorIndex Value="13"/>
         <TopLine Value="557"/>
         <CursorPos X="5" Y="580"/>
-        <UsageCount Value="76"/>
+        <UsageCount Value="84"/>
         <Loaded Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\syshelph.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="32" Y="4"/>
-        <UsageCount Value="97"/>
+        <UsageCount Value="95"/>
       </Unit10>
       <Unit11>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\rtl-objpas\src\inc\variants.pp"/>
@@ -143,7 +143,7 @@
         <EditorIndex Value="11"/>
         <TopLine Value="546"/>
         <CursorPos X="20" Y="569"/>
-        <UsageCount Value="59"/>
+        <UsageCount Value="67"/>
         <Loaded Value="True"/>
       </Unit11>
       <Unit12>
@@ -151,7 +151,7 @@
         <EditorIndex Value="6"/>
         <TopLine Value="1769"/>
         <CursorPos X="17" Y="1791"/>
-        <UsageCount Value="68"/>
+        <UsageCount Value="76"/>
         <Loaded Value="True"/>
       </Unit12>
       <Unit13>
@@ -159,7 +159,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="663"/>
         <CursorPos X="3" Y="667"/>
-        <UsageCount Value="36"/>
+        <UsageCount Value="34"/>
       </Unit13>
       <Unit14>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\fcl-db\src\base\db.pas"/>
@@ -167,21 +167,21 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="39"/>
         <CursorPos X="14" Y="61"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="17"/>
       </Unit14>
       <Unit15>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\fcl-db\src\base\dataset.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="2279"/>
         <CursorPos X="3" Y="2282"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="1"/>
       </Unit15>
       <Unit16>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\osutilsh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="13"/>
         <CursorPos X="34" Y="63"/>
-        <UsageCount Value="36"/>
+        <UsageCount Value="34"/>
       </Unit16>
       <Unit17>
         <Filename Value="C:\development\lazarus\lcl\lcltype.pp"/>
@@ -189,7 +189,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1681"/>
         <CursorPos X="3" Y="1704"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="21"/>
       </Unit17>
       <Unit18>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\generics.helpers.pas"/>
@@ -197,7 +197,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="47"/>
         <CursorPos X="20" Y="71"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="83"/>
       </Unit18>
       <Unit19>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\types.pp"/>
@@ -205,14 +205,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="39"/>
         <CursorPos X="3" Y="62"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="9"/>
       </Unit19>
       <Unit20>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\objpash.inc"/>
         <EditorIndex Value="9"/>
         <TopLine Value="192"/>
         <CursorPos X="21" Y="215"/>
-        <UsageCount Value="12"/>
+        <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit20>
       <Unit21>
@@ -220,7 +220,7 @@
         <EditorIndex Value="12"/>
         <TopLine Value="32"/>
         <CursorPos X="8" Y="55"/>
-        <UsageCount Value="56"/>
+        <UsageCount Value="64"/>
         <Loaded Value="True"/>
       </Unit21>
       <Unit22>
@@ -228,199 +228,178 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="481"/>
         <CursorPos X="3" Y="504"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="42"/>
       </Unit22>
       <Unit23>
-        <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\text.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="219"/>
-        <CursorPos X="3" Y="221"/>
-        <UsageCount Value="1"/>
-      </Unit23>
-      <Unit24>
-        <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\textrec.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="3"/>
-        <CursorPos X="5" Y="49"/>
-        <UsageCount Value="1"/>
-      </Unit24>
-      <Unit25>
-        <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\innr.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="99"/>
-        <CursorPos X="4" Y="122"/>
-        <UsageCount Value="1"/>
-      </Unit25>
-      <Unit26>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\varianth.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="204"/>
         <CursorPos X="3" Y="227"/>
-        <UsageCount Value="23"/>
-      </Unit26>
-      <Unit27>
+        <UsageCount Value="21"/>
+      </Unit23>
+      <Unit24>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\system.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1826"/>
         <CursorPos X="56" Y="1352"/>
-        <UsageCount Value="81"/>
-      </Unit27>
-      <Unit28>
+        <UsageCount Value="79"/>
+      </Unit24>
+      <Unit25>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\x86_64\x86_64.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="629"/>
         <CursorPos X="10" Y="634"/>
-        <UsageCount Value="8"/>
-      </Unit28>
-      <Unit29>
+        <UsageCount Value="6"/>
+      </Unit25>
+      <Unit26>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\sysstrh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="57"/>
         <CursorPos X="10" Y="82"/>
-        <UsageCount Value="59"/>
-      </Unit29>
-      <Unit30>
+        <UsageCount Value="57"/>
+      </Unit26>
+      <Unit27>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\sysstr.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="212"/>
         <CursorPos X="3" Y="214"/>
-        <UsageCount Value="59"/>
-      </Unit30>
-      <Unit31>
+        <UsageCount Value="57"/>
+      </Unit27>
+      <Unit28>
         <Filename Value="C:\development\lazarus\lcl\include\dragmanager.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="237"/>
         <CursorPos Y="264"/>
-        <UsageCount Value="42"/>
-      </Unit31>
-      <Unit32>
+        <UsageCount Value="40"/>
+      </Unit28>
+      <Unit29>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\sysutilh.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="4" Y="39"/>
-        <UsageCount Value="15"/>
-      </Unit32>
-      <Unit33>
+        <UsageCount Value="13"/>
+      </Unit29>
+      <Unit30>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\classes\classes.inc"/>
         <EditorIndex Value="8"/>
         <TopLine Value="225"/>
         <CursorPos X="3" Y="228"/>
-        <UsageCount Value="31"/>
+        <UsageCount Value="39"/>
         <Loaded Value="True"/>
-      </Unit33>
-      <Unit34>
+      </Unit30>
+      <Unit31>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\objpas\classes\lists.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="964"/>
         <CursorPos X="5" Y="966"/>
-        <UsageCount Value="11"/>
-      </Unit34>
-      <Unit35>
+        <UsageCount Value="9"/>
+      </Unit31>
+      <Unit32>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win\tthread.inc"/>
         <EditorIndex Value="7"/>
         <TopLine Value="3"/>
         <CursorPos X="2" Y="6"/>
-        <UsageCount Value="65"/>
+        <UsageCount Value="73"/>
         <Loaded Value="True"/>
-      </Unit35>
-      <Unit36>
+      </Unit32>
+      <Unit33>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\threadh.inc"/>
         <EditorIndex Value="4"/>
         <TopLine Value="132"/>
         <CursorPos X="11" Y="154"/>
-        <UsageCount Value="63"/>
+        <UsageCount Value="71"/>
         <Loaded Value="True"/>
-      </Unit36>
-      <Unit37>
+      </Unit33>
+      <Unit34>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win\wininc\defines.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="659"/>
         <CursorPos X="6" Y="682"/>
-        <UsageCount Value="15"/>
-      </Unit37>
-      <Unit38>
+        <UsageCount Value="13"/>
+      </Unit34>
+      <Unit35>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\thread.inc"/>
         <EditorIndex Value="5"/>
         <TopLine Value="185"/>
         <CursorPos X="3" Y="188"/>
-        <UsageCount Value="59"/>
+        <UsageCount Value="67"/>
         <Loaded Value="True"/>
-      </Unit38>
-      <Unit39>
+      </Unit35>
+      <Unit36>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win64\classes.pp"/>
         <UnitName Value="Classes"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="10" Y="38"/>
-        <UsageCount Value="15"/>
-      </Unit39>
-      <Unit40>
+        <UsageCount Value="13"/>
+      </Unit36>
+      <Unit37>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win\wininc\redef.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="679"/>
         <CursorPos X="10" Y="702"/>
-        <UsageCount Value="4"/>
-      </Unit40>
-      <Unit41>
+        <UsageCount Value="2"/>
+      </Unit37>
+      <Unit38>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win\wininc\func.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="139"/>
         <CursorPos X="10" Y="162"/>
-        <UsageCount Value="52"/>
-      </Unit41>
-      <Unit42>
+        <UsageCount Value="50"/>
+      </Unit38>
+      <Unit39>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\generics.hashes.pas"/>
         <UnitName Value="Generics.Hashes"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="89"/>
         <CursorPos X="10" Y="112"/>
-        <UsageCount Value="4"/>
-      </Unit42>
-      <Unit43>
+        <UsageCount Value="2"/>
+      </Unit39>
+      <Unit40>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win\sysos.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="404"/>
         <CursorPos X="8" Y="451"/>
-        <UsageCount Value="2"/>
-      </Unit43>
-      <Unit44>
+        <UsageCount Value="0"/>
+      </Unit40>
+      <Unit41>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win64\system.pp"/>
         <UnitName Value="System"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="85"/>
         <CursorPos X="35" Y="34"/>
-        <UsageCount Value="50"/>
-      </Unit44>
-      <Unit45>
+        <UsageCount Value="48"/>
+      </Unit41>
+      <Unit42>
         <Filename Value="C:\development\lazarus\lcl\interfaces\win32\win32memostrings.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="36"/>
         <CursorPos Y="62"/>
-        <UsageCount Value="7"/>
-      </Unit45>
-      <Unit46>
+        <UsageCount Value="5"/>
+      </Unit42>
+      <Unit43>
         <Filename Value="C:\development\lazarus\lcl\grids.pas"/>
         <UnitName Value="Grids"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="10111"/>
         <CursorPos Y="10134"/>
-        <UsageCount Value="7"/>
-      </Unit46>
-      <Unit47>
+        <UsageCount Value="5"/>
+      </Unit43>
+      <Unit44>
         <Filename Value="C:\development\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
         <EditorIndex Value="2"/>
         <TopLine Value="1288"/>
         <CursorPos X="3" Y="1311"/>
-        <UsageCount Value="25"/>
+        <UsageCount Value="33"/>
         <Loaded Value="True"/>
-      </Unit47>
-      <Unit48>
+      </Unit44>
+      <Unit45>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\inc\objpas.inc"/>
         <EditorIndex Value="10"/>
         <TopLine Value="331"/>
         <CursorPos X="12" Y="334"/>
-        <UsageCount Value="12"/>
+        <UsageCount Value="20"/>
         <Loaded Value="True"/>
-      </Unit48>
+      </Unit45>
     </Units>
     <JumpHistory Count="28" HistoryIndex="27">
       <Position1>

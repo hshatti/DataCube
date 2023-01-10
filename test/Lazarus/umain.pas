@@ -87,7 +87,10 @@ begin
   //{$ifdef Profiling}Profiler.Log(format('Data Transform! with [%d] row',[Length(DataObj.Data)]));{$endif}
   //DataObj.SaveToFile(GetCurrentDir+'gentable.csv');
   Pivot.DataObject:=@DataObj;
- {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr; {$endif}
+ {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;
+ Button1.Visible:=true;
+ Edit1.Visible:=true
+ {$endif}
 
 end;
 

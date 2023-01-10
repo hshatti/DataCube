@@ -3,9 +3,9 @@ unit frmDelphiOLAP_u;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, StrUtils, Math, System.Variants, System.Classes, Vcl.Graphics
+  System.SysUtils, StrUtils, Math, System.Classes, Vcl.Graphics
   ,Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, DateUtils
-  ,Vcl.ComCtrls, Vcl.Grids
+  ,Vcl.ComCtrls, Vcl.Grids  ,Styles
   , DCube
   {$ifdef Profiling} , hirestimer {$endif}
   ;

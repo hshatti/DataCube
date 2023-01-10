@@ -72,6 +72,7 @@ object Form1: TForm1
         OnDblClick = Edit1DblClick
         TabOrder = 2
         Text = 'Edit1'
+        Visible = False
       end
       object Button1: TButton
         Left = 288
@@ -82,6 +83,7 @@ object Form1: TForm1
         Color = clBlack
         OnClick = Button1Click
         TabOrder = 3
+        Visible = False
       end
     end
   end
