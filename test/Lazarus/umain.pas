@@ -51,7 +51,7 @@ begin
   result[0]:=RandomFrom(['IBM','Google','Amazon','Microsoft','Facebook','Cisco','Oracle'])  ;
   result[1]:=RandomFrom(['Storage','Compute','Database','Processor','Data Science','Containers','Authentication'])  ;
   result[2]:=RandomFrom(['Private','Public','NGO','']);
-  result[3]:=random(100)      ; if result[3]>50 then VarClear(result[3]);
+  result[3]:=1+random(99)      ; if result[3]>50 then VarClear(result[3]);
   result[4]:=50+random(200)/4 ; if result[4]>80 then VarClear(result[4]);
   result[5]:=TDateTime(EncodeDate(randomrange(2000,2020),EnsureRange(round(RandG(6,2)),1,12),RandomRange(1,27)))
 
@@ -70,7 +70,7 @@ begin
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,1000000);
+  setLength(DataObj.Data,100000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',varString),
     THeader.Create('Service',varString),
@@ -90,6 +90,10 @@ begin
  {$ifdef Profiling}Memo1.Lines.Text:=Profiler.LogStr;
  Button1.Visible:=true;
  Edit1.Visible:=true
+
+ {$else}
+ TabSheet2.TabVisible:=false;
+ PageControl1.ActivePageIndex:=0;
  {$endif}
 
 end;

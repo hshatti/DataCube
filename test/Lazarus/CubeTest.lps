@@ -3,7 +3,7 @@
   <ProjectSession>
     <PathDelim Value="\"/>
     <Version Value="12"/>
-    <BuildModes Count="1" Active="Release">
+    <BuildModes Count="1" Active="Debug">
       <Item1 Name="Release">
         <CompilerOptions>
           <Version Value="11"/>
@@ -63,8 +63,8 @@
         <UnitName Value="uMain"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="57"/>
-        <CursorPos X="21" Y="92"/>
+        <TopLine Value="44"/>
+        <CursorPos X="16" Y="54"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -358,7 +358,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="404"/>
         <CursorPos X="8" Y="451"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit40>
       <Unit41>
         <Filename Value="C:\development\lazarus\fpc\3.2.2\source\rtl\win64\system.pp"/>
@@ -401,7 +401,7 @@
         <Loaded Value="True"/>
       </Unit45>
     </Units>
-    <JumpHistory Count="28" HistoryIndex="27">
+    <JumpHistory Count="30" HistoryIndex="28">
       <Position1>
         <Filename Value="..\..\Source\DCube.pas"/>
         <Caret Line="1025" TopLine="1000"/>
@@ -514,6 +514,14 @@
         <Filename Value="..\..\Source\DCube.pas"/>
         <Caret Line="2207" Column="68" TopLine="2198"/>
       </Position28>
+      <Position29>
+        <Filename Value="umain.pas"/>
+        <Caret Line="94" Column="6" TopLine="74"/>
+      </Position29>
+      <Position30>
+        <Filename Value="umain.pas"/>
+        <Caret Line="10" Column="42"/>
+      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
