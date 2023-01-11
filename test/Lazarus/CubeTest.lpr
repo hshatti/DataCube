@@ -5,9 +5,9 @@ program CubeTest;
 {$ifdef Profiling}{$AppType Console} {$endif}
 
 uses
-  {$IFDEF UNIX}{$IFDEF UseCThreads}
+  {$IFDEF UNIX}
   cthreads,
-  {$ENDIF}{$ENDIF}
+  {$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazcontrols, uMain, dcube
   { you can add units after this };

@@ -2119,7 +2119,7 @@ var
 //  data: TCubeData;
   //_result:TResultData;
 
-  //Done : check why format measure won't apply in case of date type in row dimension?
+  //ToDo : check why format measure won't apply in case of date type in row dimension?
   procedure calcVals;
   var m,r,c:integer;formula:string;v:TDataRecord;vv:Variant;
   begin
