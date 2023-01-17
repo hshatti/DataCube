@@ -20,7 +20,7 @@ uses
    , Controls, StdCtrls, Graphics
   //,fpjson,extjsjson
   ;
-
+  {.$define SPARSE_DICT}
 
 const   varsOrdinal=[varShortInt,varSmallInt,varInteger,varInt64,varByte,varWord,varLongWord,varUInt64];
         varsFloats=[varSingle,varDouble,varCurrency, varDate];
@@ -74,6 +74,8 @@ type
   TVariantArray=TArray<Variant>;
   TDateTimeArray=TArray<TDateTime>;
   TReduceCallback<T> = function(const a,b:T;const i:integer;const arr:array of T):T;
+  TReducePtrFunc<PT>=function(const aData:PT;aCount:SizeInt):PT;
+  TSimpleMapCallback<T,R>=function(const aVal:T):R;
 
   { TVariantArrayHelper }
 
@@ -92,7 +94,7 @@ type
     function IndexOf(const AVal:Variant):integer;
     function Filter(const func:TFilterFunc):TSelf;
     function Sort():TSelf;
-    function Unique():TSelf;
+    function Unique(const aSort:boolean=true):TSelf;
     function Push(const AValue: Variant): Integer;
     function Reduce(const func:TReduceCallback<Variant>):Variant;
     function Lookup(const aValue:Variant):Integer;
@@ -108,7 +110,96 @@ type
   TVariantArray2DHelper=record helper for TVariantArrayArray
     public
       function ToString(const Seperator: string=','; const quote: string='"'; const Brackets:boolean=false): string;
+  end;
 
+  { Vector }
+
+  Vector<T>=record          // naive implementation, no capacity needed since dynamic arrays does implement capacities internally
+  type
+    PT=^T;
+    TSet_=TDictionary<T,SizeInt>;
+    TData=TArray<T>;
+  private
+    function Getat(const index: SizeInt): T;
+    procedure Setat(const index: SizeInt; AValue: T);
+    procedure SetCount(AValue: SizeInt);
+    function GetCount:SizeInt;
+    class operator Explicit(const AData: TData): Vector<T>;
+  public
+  // ToDo : implement iterator for [in] operator
+    Data:TData;
+    function MemorySize:SizeInt;
+    function ElementSize:SizeInt;
+    property Count:SizeInt read getCount write SetCount;
+    //function High:SizeInt;inline ;
+    procedure push(const aVal:T);
+    function isEmpty:boolean;
+    function isSorted(const descent:boolean):boolean;
+    function pop:T;
+    procedure unshift(const aVal:T);
+    function shift:T;
+    procedure insert(const aPos:SizeInt;const aVal:T);
+    procedure Sort(const Descent:boolean=false);inline;
+    function AsSorted(const descent:boolean=false):Vector<T>;
+    function reduce(const func:TReduceCallback<T>;const initVal:T):T; overload;
+    function reduce(const func:TReducePtrFunc<PT>):T; overload;  // should be useful in case of SIMD operators
+    function ToString(const sep:string=','):string;
+    property at[const index:SizeInt]:T read Getat write Setat ;default;
+    function first:PT;
+    function last:PT;
+    function IndexOf(const aVal:T):SizeInt;
+    function Intersect(const aVector:Vector<T>;const isUniqulySorted:boolean=false): Vector<T>;
+    function Union(const aVector:Vector<T>):Vector<T>;
+    function Unique:Vector<T>;
+    // same as index of but uses binary search if vector is in ascendent sorting order
+    // returns not(candidate position) if not found;
+    function Lookup(const aVal:T):SizeInt;
+    function Concat(const aVector:Vector<T>):Vector<T>;
+    function Slice(const index,aCount:SizeInt):Vector<T>;
+    // returns an array of indexies for an array of Values, [..,-1,..] if not found;
+    function Indecies(const aVals:TData;const isSorted:boolean=false):TArray<SizeInt>;
+    // gathers values from the vactor based on indecies and retrns the gatherd vector
+    function Gather(const aIndecies:TArray<SizeInt>):Vector<T>;
+    // sets the values as per [aValues] at the positions defined in [aIndecies], aIndecies and aValues length must be equal
+    procedure Scatter(const aIndecies:TArray<SizeInt>;const aValues:TData);    overload;
+    // sets the values at indecies defined in aIndecies] to the value of [aVal]
+    procedure Scatter(const aIndecies:TArray<SizeInt>;const aVal:T);  overload;
+    class function Fill(const aCount:SizeInt;const aVal:T):Vector<T>;static;
+    class function Compare(const a,b:T):integer; static;
+    class operator Implicit(const AData:TData):Vector<T>;
+    class operator Implicit(const AData:T):Vector<T>;
+    class operator Implicit(const AData:Vector<T>):TData;
+  end;
+
+  { SparseVector }
+
+  SparseVector<T> = record
+  type
+    TData=TArray<T>;
+    PT=^T;
+  private
+    FCount: SizeInt;
+    function Getat(index: SizeInt): T;
+    function LookupIndex(const idx:SizeInt):SizeInt;
+    procedure Setat(index: SizeInt; AValue: T);
+    procedure SetCount(AValue: SizeInt);
+  public
+
+    Data:{$ifdef SPARSE_DICT}TDictionary<SizeInt,T>{$else}TData{$endif} ;
+    {$ifdef SPARSE_DICT}
+    function indecies:TArray<SizeInt>;
+    {$else}
+    Indecies:TArray<SizeInt>;
+    {$endif}
+    property at[index:SizeInt]:T read Getat write Setat;default ;
+    property Count:Sizeint read FCount write SetCount;
+    constructor Create(const aCount:SizeInt;const aIndecies:TArray<SizeInt>;const aData:TData);
+    {$ifdef SPARSE_DICT}
+    class operator Initialize({$ifdef fpc}var{$else}out{$endif} dest:SparseVector<T>);
+    class operator Finalize(var dest:SparseVector<T>);
+    {$endif}
+    class operator Implicit(const aVector:SparseVector<T>):Vector<T>;
+    class operator Implicit(const aVector:Vector<T>):SparseVector<T>;
   end;
 
   TMeasureFunction=TReduceCallback<variant>;//function(const a,b:Variant):Variant;
@@ -273,6 +364,8 @@ type
   type
     TSizeIntArray = array of SizeInt;
     TParams = array of Pointer;
+    TPosDict ={$ifdef fpc}THashMap<string,Vector<Int64>>{$else}TDictionary<string,Vector<Int64>>{$endif};
+
   var
     headers:TResultHeaders;
     data:TTableData;
@@ -282,7 +375,6 @@ type
     cols,rows:TDimensionSet;
     results:TResultData;
     totalsOptions:TTotalsOptions;
-    resultCube:PObjData;
     procedure LoadFromFile(const FileName:TFileName);
     procedure SaveToFile(const FileName:TFileName);
     class operator Initialize({$ifdef fpc}var{$else}out{$endif} dest:TObjData);
@@ -293,11 +385,18 @@ type
     threadList:array of TCubeThread;
     _cols,_rows:TArray<TDimensionSet>;
     _results:TArray<TResultData>;
+    resultCube:PObjData;
     function isFiltered(const checkRow: integer): boolean;
+    procedure postCalc;
+    procedure formatValues;
+  private
+
+    var
 //    class procedure PrepareHeaders(aData: Pointer); static;
 //    class procedure ScanTable(AData: pointer);static;
     class procedure dictResultsResolver(var dest:TResults;const source:TResults);static;
   public
+    function cube_(): TObjData; overload;
     function cube(): TObjData; overload;
   end;
 
@@ -504,21 +603,6 @@ type
 
   end;
 
-  //function _sum    (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _max    (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _min    (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _first  (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _last   (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _count  (const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _average(const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _median(const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _mode(const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-  //function _stddev(const a, b: Variant; const i: integer; const Arr: array of Variant):Variant;
-
-
-  //function cube(const obj:TObjData;const options:TTotalsOptions):TObjData; overload;
-  //function cube(const obj:TObjData):TObjData; overload;
-
   TDictCollisionResolver<Value> = procedure(var dest:Value;const source:Value);
 
   { TServiceTools }
@@ -541,25 +625,6 @@ type
     class procedure mergeDictionaries<Key,Value>(const inDics:TArray<TDictionary<Key,Value>>;
       var outDic:TDictionary<Key,Value>;const resolver:TDictCollisionResolver<Value>);
   end;
-
-//function _sum(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _max(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _min(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _first(const a, b: variant; const i: integer;const  Arr: array of variant):variant;
-//function _last(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _count(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _average(const a, b: variant; const i: integer; const Arr: array of variant):variant;
-//function _median(const a, b: variant; const i: integer;const  Arr: array of variant):variant;
-//function _mode(const a, b: variant; const i: integer;const Arr: array of variant):Variant;
-//function _stddev(const a, b: variant; const i: integer; const Arr: array of variant):Variant;  function Eval(str:string):double;
-  //function comp<T>(const a,b:T;const rev:boolean):integer;            overload;
-  //function aComp<T>(const a,b:T;const rev:boolean):integer;           overload;
-  //
-  //function Lookup<T>(const Ar:array of T;const e:T;const reverse:boolean =false ;const p:boolean=false):integer;   overload;
-  //function Lookup<T>(const Ar:array of T;const e:T;const reverse:array of boolean;const p:boolean=false):integer;   overload;
-//  TIfthen = function (val:boolean;const iftrue:integer; const iffalse:integer) :integer ;
-//var
-//  ifthen :TIfthen;
 
 var
   AggregationArray:array of TAggregation ;
@@ -912,6 +977,430 @@ begin
     result:=func(result,Self[i],i,Self)
 end;
 
+{ Vector }
+
+function Vector<T>.Getat(const index: SizeInt): T;
+begin
+  result:=Data[index]
+end;
+
+procedure Vector<T>.Setat(const index: SizeInt; AValue: T);
+begin
+  Data[Index]:=aValue
+end;
+
+procedure Vector<T>.SetCount(AValue: SizeInt);
+begin
+  setLength(Data,aValue)
+end;
+
+function Vector<T>.GetCount: SizeInt;
+begin
+  result:=Length(Data)
+end;
+
+function Vector<T>.MemorySize: SizeInt;
+begin
+  result:=Length(Data)*SizeOf(T)
+end;
+
+function Vector<T>.ElementSize: SizeInt;
+begin
+  result:=SizeOf(T)
+end;
+
+class operator Vector<T>.Explicit(const AData: TData): Vector<T>;
+begin
+  result.Data:=AData
+end;
+
+//function Vector<T>.High: SizeInt;
+//begin
+//  result:=High(Data)
+//end;
+
+procedure Vector<T>.push(const aVal: T);
+begin
+  System.Insert(aVal,Data,length(Data))
+end;
+
+function Vector<T>.isEmpty: boolean;
+begin
+  result:=length(Data)=0
+end;
+
+function Vector<T>.isSorted(const descent: boolean): boolean;
+var i:SizeInt;
+begin
+  if High(Data)=0 then exit(true);
+  i:=1;
+  if descent then
+    repeat
+      {$ifdef fpc}result:=Data[i]<=Data[i-1];
+      {$else}
+      result:=Compare(Data[i],Data[i-1])>=0;
+      {$endif}
+      inc(i)
+    until not result or (i>High(Data))
+  else
+    repeat
+      {$ifdef fpc}
+      result:=Data[i]>=Data[i-1];
+      {$else}
+      result:=Compare(Data[i],Data[i-1])<=0;
+      {$endif}
+      inc(i)
+    until not result or (i>High(Data))
+end;
+
+function Vector<T>.pop: T;
+begin
+  result:=Data[High(Data)];
+  delete(Data,High(Data),1)
+end;
+
+procedure Vector<T>.unshift(const aVal:T);
+begin
+  System.Insert(aVal,Data,1)
+end;
+
+function Vector<T>.shift: T;
+begin
+  result:=Data[0];
+  System.Delete(Data,0,1)
+end;
+
+procedure Vector<T>.insert(const aPos:SizeInt; const aVal: T);
+begin
+  System.Insert(aVal,Data,aPos);
+end;
+
+procedure Vector<T>.Sort(const Descent: boolean);
+begin
+  TServiceTools.QuickSort<T>(Data,0,Length(Data),descent,compare);
+end;
+
+function Vector<T>.AsSorted(const descent: boolean): Vector<T>;
+begin
+  result.Data:=Copy(Data);
+  result.sort
+end;
+
+function Vector<T>.reduce(const func: TReduceCallback<T>; const initVal: T): T;
+var i:integer;
+begin
+  result:=initVal;
+  if High(Data)>-1 then
+    result:=Data[0];
+  for i:=1 to High(Data) do
+    result:=func(result,Data[i],i,Data)
+end;
+
+function Vector<T>.reduce(const func: TReducePtrFunc<PT>): T;
+begin
+  result:=func(@Data[0],Length(Data))^
+end;
+
+function Vector<T>.ToString(const sep:string): string;
+var
+  i: SizeInt;
+begin
+  // ToDo : check if Declared works in delphi
+  {$ifdef fpc}
+  result:='';
+  for i:=0 to High(Data) do
+    result:=result+Sep+Data[i].toString;
+  delete(result,1,length(sep))
+  {$else}
+  {$error Implement delphi toString}
+  {$endif}
+end;
+
+function Vector<T>.first: PT;
+begin
+  result:=@data[0]
+end;
+
+function Vector<T>.last: PT;
+begin
+  result:=@Data[High(Data)]
+end;
+
+function Vector<T>.IndexOf(const aVal: T): SizeInt;
+begin
+  result:=TServiceTools.IndexOf<T>(Data,aVal);
+end;
+
+function Vector<T>.Intersect(const aVector: Vector<T>;
+  const isUniqulySorted: boolean): Vector<T>;
+var i,j:SizeInt;vecA,vecB,vecT:^Vector<T>;
+begin
+  {$Note assuming both vector is Sorted and Unique}
+  i:=0;
+  vecA:=@self;
+  vecB:=@aVector;
+  if isUniqulySorted then
+    while i< Length(vecB^.Data) do begin
+      //{$ifdef fpc}
+      j:=vecA^.Lookup(vecB^[i]);
+      if j>-1 then begin
+        result.push(vecB^[i]);
+        //j:=i;
+      end ;
+      inc(i);
+      // swap vectors
+      //vecT:=vecA;
+      //vecA:=vecB;
+      //vecB:=vecT;
+      //{$else}
+      //{$error Implement delphi intersect}
+      //{$endif}
+    end
+  else
+    while i< Length(vecB^.Data) do begin
+      //{$ifdef fpc}
+      j:=vecA^.IndexOf(vecB^[i]);
+      if j>-1 then begin
+        result.push(vecB^[i]);
+        //j:=i;
+      end ;
+      inc(i);
+      // swap vectors
+      //vecT:=vecA;
+      //vecA:=vecB;
+      //vecB:=vecT;
+      //{$else}
+      //{$error Implement delphi intersect}
+      //{$endif}
+    end;
+end;
+
+function Vector<T>.Union(const aVector: Vector<T>): Vector<T>;
+begin
+
+end;
+
+function Vector<T>.Unique: Vector<T>;
+var st:TSet_;
+  i:SizeInt;
+begin
+  st:=TSet_.Create;
+  try
+    for i:=0 to High(Data) do
+      st.tryAdd(data[i],0);
+  finally
+    result:=st.keys.ToArray;
+    st.free;
+  end;
+end;
+
+function Vector<T>.Lookup(const aVal: T): SizeInt;
+begin
+  result:=TServiceTools.BinSearch<T>(Data,aVal,Length(Data));
+end;
+
+function Vector<T>.Concat(const aVector: Vector<T>): Vector<T>;
+begin
+  result.Data:=System.Concat(Data,aVector.Data) ;
+  // ToDo : Vector<T> must not be used for managed types, otherwise, refcount during concat is not handled
+  //setLength(result.Data,Length(Data)+Length(aVector.Data));
+  //move(Data[0]        ,result.Data[0]           ,Length(Data)        *SizeOf(T));
+  //move(aVector.Data[0],result.Data[Length(Data)],Length(aVector.Data)*SizeOf(T));
+end;
+
+function Vector<T>.Slice(const index, aCount: SizeInt): Vector<T>;
+begin
+  result.Data:=copy(Data, index, aCount)
+end;
+
+function Vector<T>.Indecies(const aVals: TData;const isSorted:boolean): TArray<SizeInt>;
+var i,idx:SizeInt;
+begin
+  setLength(result,Length(aVals));
+  if isSorted then
+    for i:=0 to High(aVals) do
+      result[i]:=lookup(aVals[i])
+  else
+    for i:=0 to High(aVals) do
+      result[i]:=IndexOf(aVals[i])
+
+end;
+
+function Vector<T>.Gather(const aIndecies: TArray<SizeInt>): Vector<T>;
+var i:SizeInt;
+begin
+  setLength(result.Data,Length(aIndecies));
+  for i:=0 to High(aIndecies) do
+    result[i]:=Data[aIndecies[i]]
+end;
+
+procedure Vector<T>.Scatter(const aIndecies: TArray<SizeInt>;
+  const aValues: TData);
+var i:SizeInt;
+begin
+  for i:=0 to High(aIndecies) do
+    Data[aIndecies[i]]:=aValues[i]
+end;
+
+procedure Vector<T>.Scatter(const aIndecies: TArray<SizeInt>; const aVal: T);
+var i:SizeInt;
+begin
+  for i:=0 to High(aIndecies) do
+    Data[aIndecies[i]]:=aVal
+end;
+
+class function Vector<T>.Fill(const aCount: SizeInt; const aVal: T): Vector<T>;
+var
+  i: Integer;
+begin
+  setLength(result.Data,aCount);
+  for i:=0 to High(result.Data) do
+    result.Data[i]:=aVal
+end;
+
+class function Vector<T>.Compare(const a, b: T): integer;
+begin
+  {$ifdef fpc}
+  if a=b then exit(0);
+  if a>b then exit(1);
+  result:=-1
+  {$else}
+  result:=TComparer<T>.default.compare(a,b)
+  {$endif}
+end;
+
+class operator Vector<T>.Implicit(const AData: TData): Vector<T>;
+begin
+  result.Data:=AData
+end;
+
+class operator Vector<T>.Implicit(const AData: Vector<T>): TData;
+begin
+  result:=AData.Data
+end;
+
+class operator Vector<T>.Implicit(const AData: T): Vector<T>;
+begin
+  result.Data:=[AData]
+end;
+
+{ SparseVector }
+
+function SparseVector<T>.Getat(index: SizeInt): T;
+var aPos:SizeInt;
+begin
+  {$ifdef SPARSE_DICT}
+  Data.tryGetValue(index,result);
+  {$else}
+  aPos:=LookupIndex(index);
+  if aPos<0 then
+    result:=default(T)
+  else
+    result:=Data[aPos]
+  {$endif}
+end;
+
+{$ifdef SPARSE_DICT}
+function SparseVector<T>.indecies: TArray<SizeInt>;
+begin
+  result:=Data.keys.toArray()
+end;
+{$endif}
+
+function SparseVector<T>.LookupIndex(const idx: SizeInt): SizeInt;
+begin
+  {$ifndef SPARSE_DICT}
+  result:=TServiceTools.BinSearch<SizeInt>(Indecies,Idx,Length(Indecies));
+  {$endif}
+end;
+
+procedure SparseVector<T>.Setat(index: SizeInt; AValue: T);
+var aPos:SizeInt;
+begin
+  {$ifdef SPARSE_DICT}
+  Data.addOrSetValue(index,AValue);
+  {$else}
+  aPos:=LookupIndex(index);
+  if aPos<0 then begin
+    aPos:=-aPos-1;
+    insert(index,Indecies, aPos);
+    insert(AValue, Data, aPos)
+  end else
+    Data[aPos]:=AValue;
+  {$endif}
+end;
+
+procedure SparseVector<T>.SetCount(AValue: SizeInt);
+begin
+  if FCount=AValue then Exit;
+  FCount:=AValue;
+end;
+
+constructor SparseVector<T>.Create(const aCount: SizeInt;
+  const aIndecies: TArray<SizeInt>; const aData: TData);
+var i:SizeInt;
+begin
+  assert(Length(aData)=length(aIndecies),'Sizes of Indecies and Data do not match!');
+  FCount:=aCount;
+  {$ifdef SPARSE_DICT}
+  for i:=0 to System.High(aIndecies) do
+    Data.AddOrSetValue(aIndecies[i],aData[i]);
+  {$else}
+  Data:=aData;
+  // ToDo : Indecies and Data must be Sorted based on the aIndecies values, assuming it's sorted for now
+  Indecies:=aIndecies;
+  {$endif}
+end;
+
+class operator SparseVector<T>.Implicit(const aVector: SparseVector<T>): Vector<T>;
+var i:SizeInt;
+  aPair:TPair<SizeInt,T>;
+begin
+  setLength(result.Data,aVector.FCount);
+  {$ifdef SPARSE_DICT}
+  for aPair in aVector.Data do
+    result.Data[aPair.key]:=aPair.Value;
+  {$else}
+  for i:=0 to System.High(aVector.Indecies) do
+    result.Data[aVector.Indecies[i]]:=aVector.Data[i]
+  {$endif}
+end;
+
+class operator SparseVector<T>.Implicit(const aVector: Vector<T>): SparseVector<T>;
+var i:SizeInt;
+  _default:T;
+begin
+  _default:=Default(T);
+  result.FCount:=Length(aVector.Data);
+  for i:=0 to System.High(aVector.Data) do
+    if {$ifdef fpc}
+    _default<>aVector.Data[i]
+    {$else}
+    compare(_default,aVector.Data[i])<>0
+    //Todo : Implement Delphi equality
+    {$endif} then
+  {$ifdef SPARSE_DICT}
+      result.Data.TryAdd(i,aVector.Data[i])
+  {$else}
+      begin
+        Insert(i,result.Indecies,Length(result.Indecies));
+        Insert(aVector.Data[i],result.Data,Length(result.Data));
+      end;
+  {$endif}
+end;
+
+{$ifdef SPARSE_DICT}
+class operator SparseVector<T>.Initialize({$ifdef fpc}var{$else}out{$endif} dest: SparseVector<T>);
+begin
+  dest.Data:=TDictionary<SizeInt,T>.Create;
+end;
+
+class operator SparseVector<T>.Finalize(var dest: SparseVector<T>);
+begin
+  dest.Data.free
+end;
+{$endif}
+
 { TCubeThread }
 
 constructor TCubeThread.Create(const obj: PObjData; const aId: integer;
@@ -946,6 +1435,7 @@ begin
   //writeln('PrepareHeaders Entring Thread [',aId,'] from [',aPosition,' count [',aCount,']');
   setLength(row,length(Obj.rowsIds));
   setLength(col,length(Obj.colsIds));
+
   with Obj^ do
   for rowNo:=aposition to aPosition+aCount-1 do begin
       if isFiltered(rowNo) then continue;
@@ -1043,6 +1533,8 @@ begin
       end;
     end;
   end;//end scanning table
+
+
   {$ifdef TABLEDATA2}
   resultValues:=res.values.toArray;
   for i:=0 to high(resultValues) do
@@ -1773,7 +2265,7 @@ begin
       end;
     end;
   end;
-  if isFound then result := L else result:=-L-1;
+  if isFound then result := L else result:=-L-1;// not L
 end;
 
 
@@ -1950,150 +2442,179 @@ function TObjData.isFiltered(const checkRow:integer):boolean;
 var jj:integer;
 begin
   result:=false;
+
+  {$ifdef COL_ROW}
+  for jj:=0 to high(filtIds) do
+     if filters[jj].data.Lookup(Data[filtIds[jj]][checkRow])<0 then
+       begin result:=true;break;end;
+  {$else}
+
   for jj:=0 to high(filtIds) do
      if filters[jj].data.Lookup(Data[checkRow][filtIds[jj]])<0 then
        begin result:=true;break;end;
+  {$endif}
   //if filtRow then begin filtRow:=false;continue end;                  // if filter list is inroduced then skip elements not in the filter list
 end;
 
-(*
-class procedure TObjData.PrepareHeaders(aData: Pointer);
-var
-  rowNo,i,idx:SizeInt;
-  _range:PSizeInt;
-  Params :TParams absolute aData;
-  row, col, ro, co:TDataRecord;
-  _Row,_Col:PDimensionSet;
+procedure TObjData.postCalc;
+//ToDo : check why format measure won't apply in case of date type in row dimension?
+var m,r,c:integer;formula:string;v:TDataRecord;vv:Variant;
 begin
-  _range:=PSizeInt(params[1]);
-  writeln('PrepareHeaders Entring Thread [',_range[2],'] from [',_range[0],' count [',_range[1],']');
-  idx:=_range[2];
-  setLength(row,length(PObjData(params[0]).rowsIds));
-  setLength(col,length(PObjData(params[0]).colsIds));
-  _row:= PDimensionSet(params[2]);
-  _col:= PDimensionSet(params[3]);
-  inc(_row,idx);
-  inc(_col,idx);
-  with PObjData(params[0])^ do
-  for rowNo:=_range[0] to _range[0]+_range[1]-1 do begin
-      if isFiltered(rowNo) then continue;
-      for i:=0 to high(rowsIds) do
-        row[i]:= Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
-      for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
-        col[i]:= Data[rowNo][colsIds[i]];
+  //for m:=0 to high(dimensions.Measures) do begin
+  //    for r:=0 to High(resultCube.data) do begin
+  //        formula:=dimensions.measures[m].formula;
+  //        if formula<>'' then
+  //          for c:=0 to High(FCols) do   //Done : Take Cols/Rows toArray variables before entring the loop
+  //            begin
+  //                v:=FCols[c];
+  //                if result.data[r][c*length(dimensions.measures)+m]='' then exit;
+  //                result.data[r][c*length(dimensions.measures)+m]:=eval(
+  //                        formula.replace('{val}',result.data[r][c*length(dimensions.measures)+m],[rfReplaceAll])
+  //                        .replace('{colTotal}',result.results[TDataRecord.Fill(Length(dimensions.rows),arrayCompFiller).concat(v).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
+  //                        .replace('{rowTotal}',result.results[FRows[r].concat(TDataRecord.Fill(length(dimensions.cols),arrayCompFiller)).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
+  //                        .replace('{grandTotal}',result.results[TDataRecord.Fill(length(dimensions.cols)+length(dimensions.rows),arrayCompFiller).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
+  //                );
+  //            end;
+  //    end
+  //end
+end;
 
-      // calculate unique and subtotal rows
-      // ToDo -cPerformance : explore using TArray<FieldType> instead of TVariantArray?
-      for i:=TServiceTools.ifthen<Integer>(totalsOptions.subRows, 1, length(rowsIds)) to length(rowsIds) do begin
-         {$ifdef Profiling2} Profiler.Log(0); {$endif}
-          ro:=copy(row,0,i).concat(TDataRecord.Fill(length(rowsIds)-i,arrayCompFiller));
-          {$ifdef Profiling2} Profiler.Log(1); {$endif}
-          _Row.tryAdd(ro.toString(splitter),ro);
-          {$ifdef Profiling2} Profiler.Log(2); {$endif}
-      end;
-      // calculate unique subtotal columns
-      for i:=TServiceTools.ifthen<Integer>(totalsOptions.subCols,1,length(colsIds)) to length(colsIds) do begin
-          {$ifdef Profiling2} Profiler.Log(0); {$endif}
-          co:=copy(col,0,i).concat(TDataRecord.fill(length(colsIds)-i,arrayCompFiller));
-          {$ifdef Profiling2} Profiler.Log(1); {$endif}
-          _Col.tryAdd(co.toString(splitter),co);
-          {$ifdef Profiling2} Profiler.Log(2); {$endif}
-      end;
-  end;
-  writeln('PrepareHeaders Exiting Thread [',idx,']');
-end;  // 9.7 seconds on {Rows':Sector', Columns:'Provider', Measure : Sum('Price')}
-
-class procedure TObjData.ScanTable(AData: pointer);
-var
-
-  Params:TParams absolute aData;
-  _range:PSizeInt;
-  rowNo,i,j,k,idx:SizeInt;
-  {$ifdef TABLEDATA2}resultValues:TArray<TResults>;{$endif}
-  row, col, Rw:TDataRecord;
-  _result:PResultData;
-  initSize:SizeInt;
-  rCube:string;
-  cub:TTableData;
-  id:TResults;
-  hashFound:boolean;
-  val:Variant;
+procedure TObjData.formatValues;
+var m,r,c:integer; v:variant;
 begin
-  _range:=PSizeInt(Params[1]);
-  writeln('ScanTable Entring Thread [',_range[2],']');
-  idx:=_range[2];
-  setLength(row,length(PObjData(params[0])^.rowsIds));
-  setLength(col,length(PObjData(params[0])^.colsIds));
-  _result:=PResultData(params[2]);
-  inc(_result,idx);
-  with PObjData(Params[0])^ do  begin
-    initSize:=length(data) div (length(_Results)*(resultCube.Cols.count + resultCube.Rows.count));
-    for rowNo:=_range[0] to _range[0]+_range[1]-1 do begin
-      if isFiltered(rowNo) then continue;
-      for i:=0 to high(rowsIds) do
-       row[i]:= Data[rowNo][rowsIds[i]];     //take values of selected rows into row[]
-      for i:=0 to high(colsIds) do                //take values of selected columns into columns[]
-       col[i]:= Data[rowNo][colsIds[i]];
-
-      // ********************* check factorial array multiplication from here
-      {$ifdef Profiling2} Profiler.Log(0); {$endif}
-      if assigned(col) or assigned(row) then begin
-        rw:=copy(row,0,length(rowsIds)).concat(copy(col,0,length(colsIds)));
-        //if length(rw)>0 then
-        {$ifdef Profiling2} Profiler.Log(1); {$endif}
-        k:=1 shl Length(rw);
-        cub:=Dice(rw, arrayCompFiller, k);
-      end
-      else
-        cub:=[[arrayCompFiller]];
-      {$ifdef Profiling2} Profiler.Log(2); {$endif}
-      for i:=0 to high(cub) do  begin
-        rCube:=cub[i].toString(splitter,'',false);
-        {$ifdef Profiling2} Profiler.Log(3); {$endif}
-        hashFound:=_result.tryGetValue(rCube,id);
-        {$ifdef Profiling2} Profiler.Log(4); {$endif}
-        if not hashFound then begin
-          //id:=TResults.Create(length(measIds), initSize );
-          setLength(id.TableData,length(measIds));
-          setLength(id.ReducedMeasures,length(measIds));
-          for j:=0 to high(id.TableData) do
-            setLength(id.TableData[j].Data,initSize);
-          _result.Add(rCube,id);
+  // ToDO -cMeasuresOnRows : rewrite to support Measures position on rows
+  for m:=0 to high(dimensions.measures) do begin
+    if dimensions.measures[m].decimals>=0 then
+      for r:=0 to High(resultCube.data) do begin
+        c:=m;
+        while c<=high(resultCube.data[r]) do begin
+            v:=resultCube.data[r][c];
+            if (TVarData(v).vtype in [varEmpty,varNull])
+              or VarIsStr(v) then
+                exit;
+            if TVarData(v).vtype in varsOrdinal then
+              resultCube.data[r][c]:=format('%.0n',[double(v)])
+            else if TVarData(v).vtype in varsFloats then
+              resultCube.data[r][c]:=format('%.'+dimensions.measures[m].decimals.ToString+'n',[double(v)]) ;
+          inc(c,length(dimensions.Measures));
         end;
-        {$ifdef Profiling2} Profiler.Log(5); {$endif}
-        { ToDo -cPerformance : if the same measure column is added again consider referencing
-          the added one inseated of pushing a new measure  }
-        for j:=0 to High(measIds) do begin
-          val:=Data[rowNo][measIds[j]];
-          if not varIsEmpty(val) then
-            {$ifdef TABLEDATA2}
-            id.TableData[j].Push(val)
-            {$else}
-            insert(val,id.TableData[j],length(id.TableData[j]))
-            {$endif}
-        end;
-        {$ifdef Profiling2} Profiler.Log(6); {$endif}
       end;
     end;
-  end;//end scanning table
-  {$ifdef TABLEDATA2}
-  resultValues:=_result.values.toArray;
-  for i:=0 to high(resultValues) do
-    for j:=0 to high(resultValues[i].TableData) do
-      resultValues[i].TableData[j].Shrink;
-  {$ifdef Profiling2}
-  Profiler.Log('Shrinking...');
-  {$endif}
-  {$endif}
-  writeln('ScanTable Exiting Thread [',idx,']');
 end;
-*)
+
 class procedure TObjData.dictResultsResolver(var dest: TResults;
   const source: TResults);
 var i,j:SizeInt;
 begin
   for i:=0 to high(dest.TableData) do
     dest.TableData[i].concat(source.TableData[i]);
+end;
+
+function TObjData.cube_():TObjData;
+var
+  i, j, k, rowNo:SizeInt;
+  FCols,FRows:TTableData;
+  posDics:array of TPosDict;
+  cSort,rSort:TArray<boolean>;
+  colsIds, rowsIds, filtIds: TIntegerDynArray;
+  oprsIds:TArray<TAggregation>;
+  fieldNames:TStringArray;
+  fieldTypes:TArray<THeaderType>;
+  co,ro : TDataRecord;
+  boolVec:Vector<Int64>;
+  hashFound:boolean;
+begin
+  resultCube:=@result;
+  setLength(fieldNames,length(Headers.Columns[0]));
+  setLength(fieldTypes,length(fieldNames));
+
+  for i:=0 to High(Headers.Columns[0]) do begin
+     fieldNames[i]:=Headers.Columns[0][i].name;
+     fieldTypes[i]:=Headers.Columns[0][i].typ;
+  end;
+
+  setLength(posDics,Length(fieldNames));
+  for i:=0 to High(posDics) do begin
+    posDics[i]:=TPosDict.Create;
+    //posDics[i].Capacity:=Length(Data) ;
+  end;
+
+  for rowNo:=0 to High(Data) do begin
+    for i:=0 to High(fieldNames) do begin
+      //  ToDo -cNotReally : will try GindBucketIndex /GetBucketIndex later
+      {$ifdef Profiling}Profiler.log(0);{$endif}
+      hashFound:=posDics[i].tryGetValue(string(Data[rowNo][i]),boolVec);
+      {$ifdef Profiling}Profiler.log(2);{$endif}
+      if hashFound then begin
+        boolVec.push(rowNo);
+        {$ifdef Profiling}Profiler.log(1);{$endif}
+      end
+      else begin
+        posDics[i].add(string(Data[rowNo][i]),rowNo);
+        {$ifdef Profiling}Profiler.log(3);{$endif}
+      end;
+    end;
+  end;
+  {$ifdef Profiling}Profiler.LogSegments(['','Push to vector','hash retreival','add to dictionary']);{$endif}
+
+  setLength(rowsIds,length(dimensions.rows));
+  for i:=0 to High(dimensions.rows) do begin
+   rowsIds[i]:=fieldNames.indexOf(dimensions.rows[i]);
+   if rowsIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[dimensions.rows[i]]);
+  end;
+  setLength(colsIds,length(dimensions.cols));
+  for i:=0 to High(dimensions.cols) do begin
+   colsIds[i]:=fieldNames.indexOf(dimensions.cols[i]);
+   if colsIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[dimensions.cols[i]]);
+  end;
+  setLength(measIds,length(dimensions.measures));
+  setLength(oprsIds,length(dimensions.measures));
+  for i:=0 to High(dimensions.measures) do begin
+   measIds[i]:=fieldNames.indexOf(dimensions.measures[i].field);
+   if measIds[i]<0 then raise Exception.CreateFmt('Field [%s] not found!',[dimensions.measures[i].field]);
+   oprsIds[i]:=dimensions.measures[i].operation;
+   if oprsIds[i].typ=varEmpty then
+     oprsIds[i].typ:=FieldTypes[MeasIds[i]];
+  end;
+  setLength(filtIds,length(filters));
+  for i:=0 to High(filters) do
+   filtIds[i]:=fieldNames.indexOf(filters[i].fieldName);
+
+  // ToDo -cMeasuresOnRows: add optional [Measure header] on rows instead of columns
+  ro:=TDataRecord.fill(TServiceTools.ifthen<Integer>(totalsOptions.grandRows,TServiceTools.ifthen<Integer>(length(rowsIds)>0,length(rowsIds),TServiceTools.ifthen<Integer>(length(colsIds)>0,0,1)),1),arrayCompFiller);
+  co:=TDataRecord.fill(TServiceTools.ifthen<Integer>(totalsOptions.grandCols,length(colsIds),0),arrayCompFiller);
+  //if assigned(ro) then
+   result.rows.tryAdd(ro.toString(splitter),ro);
+  //if assigned(co) then
+   result.cols.tryAdd(co.toString(splitter),co);
+  // add grand total row anyway (horizonal measures case)
+  setLength(rSort,length(dimensions.rows));
+  for i:=0 to high(dimensions.rows) do
+    rSort[i]:=descends.IndexOf(dimensions.Rows[i])>=0;
+  setLength(cSort,length(dimensions.cols));
+  for i:=0 to high(dimensions.cols) do
+    cSort[i]:=descends.IndexOf(dimensions.Cols[i])>=0;
+
+ {$ifdef Profiling} Profiler.Log('Initialization...'); {$endif}
+
+ //for i:=0 to
+
+  //if not assigned(Data) then exit;
+  //if not assigned(Data[0]) then exit;
+
+
+
+  //TCubeThread.PrepareHeaders(@Self, 0, 0, Length(Data), result.cols, result.rows);
+  //FCols:=result.Cols.values.toArray;
+  //FRows:=result.Rows.values.toArray;
+
+
+  //for rowNo:=0 to High(Data) do begin
+  //
+  //end;
+
+  for i:=0 to High(posDics) do
+    posDics[i].Free;
 end;
 
 function TObjData.cube():TObjData;
@@ -2114,44 +2635,9 @@ var
   FCols,FRows:TTableData;
   params:TParams;
 
-
  // dimensions:  TDimensions ;
 //  data: TCubeData;
   //_result:TResultData;
-
-  //ToDo : check why format measure won't apply in case of date type in row dimension?
-  procedure calcVals;
-  var m,r,c:integer;formula:string;v:TDataRecord;vv:Variant;
-  begin
-        for m:=0 to high(dimensions.Measures) do begin
-            for r:=0 to High(result.data) do begin
-                formula:=dimensions.measures[m].formula;
-                if formula<>'' then
-                  for c:=0 to High(FCols) do   //Done : Take Cols/Rows toArray variables before entring the loop
-                    begin
-                        v:=FCols[c];
-                        if result.data[r][c*length(dimensions.measures)+m]='' then exit;
-                        result.data[r][c*length(dimensions.measures)+m]:=eval(
-                                formula.replace('{val}',result.data[r][c*length(dimensions.measures)+m],[rfReplaceAll])
-                                .replace('{colTotal}',result.results[TDataRecord.Fill(Length(dimensions.rows),arrayCompFiller).concat(v).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
-                                .replace('{rowTotal}',result.results[FRows[r].concat(TDataRecord.Fill(length(dimensions.cols),arrayCompFiller)).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
-                                .replace('{grandTotal}',result.results[TDataRecord.Fill(length(dimensions.cols)+length(dimensions.rows),arrayCompFiller).ToString(splitter,'',false)].ReducedMeasures[m],[rfReplaceAll])
-                        );
-                    end;
-                if dimensions.measures[m].decimals>=0 then
-                    for c:=0 to High(FCols) do begin
-                        vv:=result.data[r][c*Length(dimensions.measures)+m];
-                        if (TVarData(vv).vtype in [varEmpty,varNull])
-                          or VarIsStr(vv) then
-                            exit;
-                        if TVarData(vv).vtype in varsOrdinal then
-                          result.data[r][c*Length(dimensions.measures)+m]:=format('%.0n',[double(vv)])
-                        else if TVarData(vv).vtype in varsFloats then
-                          result.data[r][c*Length(dimensions.measures)+m]:=format('%.'+dimensions.measures[m].decimals.ToString+'n',[double(vv)]) ;
-                    end;
-            end
-        end
-  end;
 
 begin
   {$ifdef Profiling}  Profiler.start; {$endif}
@@ -2388,7 +2874,8 @@ begin
      Insert(TServiceTools.arrayLookup(FRows,TDataRecord.Fill(length(rowsIds),arrayCompFiller)),result.rowsHeadGrandTotals,length(result.rowsHeadGrandTotals));
      //Insert(result.rows.lookup(TDataRecord.Fill(length(rowsIds),arrayCompFiller)),result.rowsHeadGrandTotals,length(result.rowsHeadGrandTotals));
    {$ifdef Profiling} Profiler.Log('Cube GrandTotals prepared');{$endif}
-   calcVals;
+   postCalc;
+   formatValues;
    result.Dimensions:=Dimensions;
    {$ifdef Profiling} Profiler.Log('Cube finalized');{$endif}
 
@@ -2903,17 +3390,18 @@ begin
   if Brackets then result:='['+result+']';
 end;
 
-function TVariantArrayHelper.Unique: TSelf;
+function TVariantArrayHelper.Unique(const aSort: boolean): TSelf;
 var i:integer;
 begin
   if not Assigned(Self) then exit;// early exit
   setLength(result,0);
-  {$ifdef fpc}Sort(){$else}TArray.Sort<Variant>(Self){$endif};
-  if High(Self)>-1 then Insert(Self[0],Result,length(Result));
+  if aSort then {$ifdef fpc}Sort(){$else}TArray.Sort<Variant>(Self){$endif};
+  if High(Self)>-1 then
+    Insert(Self[0],Result,length(Result));
 
   for I := 1 to High(Self) do
-  if Self[i]<>Self[i-1] then
-    Insert(Self[i],Result,length(Result))
+    if Self[i]<>Self[i-1] then
+      Insert(Self[i],Result,length(Result))
 
 end;
 
@@ -2944,6 +3432,7 @@ function TStringArrayHelper.IndexOf(const str: string): integer;
 var i:integer;
 begin
   result:=-1;
+  // ToDo : implement a case sensitive indexOf
   for i:=0 to High(Self) do
     if Self[i]=str then begin
       result:=i;
@@ -2955,6 +3444,7 @@ function TStringArrayHelper.Lookup(const str: string; const CaseSensitive: boole
 begin
 
    if not {$ifdef fpc}
+     //ToDo : implement a case sensitive lookup
      (TArrayHelper<string>.BinarySearch(Self,str,result))
      {$else}
      TArray.BinarySearch<string>(Self,str,result)

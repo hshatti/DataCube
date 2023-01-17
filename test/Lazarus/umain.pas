@@ -70,7 +70,7 @@ begin
   PageControl1.Parent:=Pivot;
   PageControl1.Align:=alClient;
   DefaultFormatSettings.ShortDateFormat:='yyyy-mm-dd';
-  setLength(DataObj.Data,100000);
+  setLength(DataObj.Data,2000000);
   DataObj.Headers.columns:=[[
     THeader.Create('Provider',varString),
     THeader.Create('Service',varString),
@@ -144,7 +144,7 @@ begin
     for j:=0 to High(Cube.headers.Rows[i]) do begin
       Grid.Cells[i,j+length(Cube.Headers.columns)]:=Cube.Headers.Rows[i][j].Name.Replace(#$ff,'',[rfReplaceAll]);
     end;
-
+  //exit;
   for i:=0 to High(Cube.Data) do
     for j:=0 to High(Cube.Data[i]) do
       Grid.Cells[j+length(Cube.Headers.rows),i+length(Cube.Headers.columns)]:=Cube.Data[i][j];
@@ -199,42 +199,35 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   i:integer;
-  ar,ab, transposed:TTableData;
-  arr,abb:TVariantArray;
-  ColsIds:array of integer;
+  boolVec:Vector<boolean>;
+  intVec,intVec2 :Vector<Int64>;
+  aa,bb,cc:array of integer;
   function InitWord:integer;
   var i:integer;
   begin
-//    setLength(result,RandomRange(3,4));
-    result:=randomrange(1,100);
-
+    result:=randomrange(1,10000);
   end;
 
 begin
 
   {$ifdef Profiling}Profiler.start; {$endif}
-  Transposed := TServiceTools.TransposeData(DataObj.data);
-  {$ifdef Profiling}Profiler.Log('Data Transposed');   {$endif}
-  ar:=TServiceTools.SparseValues<TVariantArray>(transposed,[0,1]);
-  {$ifdef Profiling}Profiler.Log('Data Sliced');    {$endif}
-  ab:=TServiceTools.TransposeData(Ar);
-  {$ifdef Profiling}Profiler.Log('Data2 Transposed');   {$endif}
-  TServiceTools.arraySort(ab,0,High(ab),[true,false]);
-  {$ifdef Profiling}Profiler.Log('Data Sorted');      {$endif}
-  ab:=TServiceTools.arrayUnique(ab);
-  {$ifdef Profiling}Profiler.Log('Data Uniqued');   {$endif}
-  Log(ab.ToString);
-  {$ifdef Profiling}Log(Profiler.LogStr);       {$endif}
-  exit;
+  //intVec.Count:=10000;
+  //intVec2.Count:=intVec.Count;
+  //for i:=0 to intVec.Count-1 do
+  //  begin
+  //    intVec[i]:=initWord ;
+  //    intVec2[i]:=initWord;
+  //  end;
+  //intVec:=intVec.Unique;
+  //intVec2:=intVec2.Unique;
+  //intVec.Sort;
+  //intVec2.Sort;
+  DataObj.cube_;
+  //Profiler.Log('Vectors Generated '{+intVec.Unique.AsSorted.ToString()});
+  //intVec:=intVec.InterSect(intVec2,true);
+  Profiler.Log('Cube ....');
 
-  setLength(arr,10000000);
-  for i:=0 to high(arr) do arr[i]:=initWord ;
-  ShowMessage('Will sort now, hang on...');
-  TVariantArray(arr).Sort;
-  ShowMessage('Will Unique now, hang on...');
-  abb:=TVariantArray(arr).Unique;
-  Log(TVariantArray(abb).toString) ;
-
+  {$ifdef Profiling}Log(Profiler.LogStr); {$endif}
 
  // Log( Eval(Edit1.Text))
 end;

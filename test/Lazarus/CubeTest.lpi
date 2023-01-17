@@ -94,7 +94,7 @@
         <ShowCond Value="True"/>
       </Verbosity>
       <CustomOptions Value="-dTABLEDATA2
--dNoPROFILING"/>
+-dPROFILING"/>
     </Other>
   </CompilerOptions>
   <Debugging>
